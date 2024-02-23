@@ -23,7 +23,7 @@
 
 ## Регистрация в системе
 
-1. Зарегистрируйтесь в системе: https://cpp.manytask.org/. Код регистрации доступен [на странице курса](https://lk.yandexdataschool.ru/courses/2023-spring/7.1119-obuchenie-iazyku-cpp-chast-2/). Если вы ранее регистрировались в этой системе для прохождения других курсов, то сразу можете жать кнопку **Login**.
+1. Зарегистрируйтесь в системе: https://cpp.manytask.org/. Код регистрации доступен [на странице курса](https://lk.yandexdataschool.ru/courses/2024-spring/7.1222-obuchenie-iazyku-cpp-chast-2/). Если вы ранее регистрировались в этой системе для прохождения других курсов, то сразу можете жать кнопку **Login**.
 2. Сгенерируйте ssh ключ, если у вас его еще нет.
    ```bash
    $ ssh-keygen -N "" -f ~/.ssh/id_rsa
@@ -52,7 +52,7 @@
    $ git config --local user.email "<email с cpp.manytask.org>"
 
    # Настраиваем возможность получать обновления из публичного репозитория с задачами
-   $ git remote add upstream git@gitlab.manytask.org:cpp/public-2023-spring.git
+   $ git remote add upstream git@gitlab.manytask.org:cpp/public-2024-spring.git
    ```
 
    В течении всего курса публичный репозиторий будет обновлятся, в нём будут появлятся новый задачи, а также возможно будут обновляться тесты и условия существующих задач. Подтянуть изменения из публичного рупозитория можно с помощью команды `git pull upstream master` 
@@ -84,4 +84,4 @@ $ git push origin master
 
 5. Пронаблюдайте за процессом тестирования на странице CI/CD -> Pipelines своего репозитория. gitlab показывает вывод консоли во время тестирования.
 
-6. Проверьте, что оценка появилась в [таблице с результатами](https://docs.google.com/spreadsheets/d/1c-55ssZXu7MsmvFflVEdIJ6JmKBfAwotOjB0PL2f5KI)
+6. Проверьте, что оценка появилась в [таблице с результатами](https://docs.google.com/spreadsheets/d/1Ae0G7XgzTAPa3P63aUEui6csfW2SwdqdX5zMpdPbKAI)
