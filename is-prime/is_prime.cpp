@@ -3,7 +3,6 @@
 #include <cmath>
 #include <algorithm>
 #include <cstddef>
-#include <ranges>
 #include <vector>
 #include <atomic>
 #include <thread>
@@ -12,7 +11,7 @@ constexpr size_t kThreadCnt = 16;
 std::atomic_flag is_not_prime;
 
 void ThreadFunc(uint64_t x, uint64_t l_bound, uint64_t r_bound) {
-    for (auto i : std::views::iota(l_bound, r_bound)) {
+    for (size_t i = l_bound; i < r_bound + 1; ++i) {
         if (!is_not_prime.test()) {
             if (x % i == 0) {
                 is_not_prime.test_and_set();
