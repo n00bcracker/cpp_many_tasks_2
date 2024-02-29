@@ -9,6 +9,8 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+namespace {
+
 void TestDataRace(auto* channel) {
     int* p = nullptr;
     std::jthread t1{[&] {
@@ -37,8 +39,10 @@ void TestCopy(auto* channel) {
 }
 
 void TestClose(auto* channel) {
-    std::thread thread{[&] { CHECK_THROWS_AS(channel->Send(2), std::runtime_error); }};
     channel->Close();
+    std::thread thread{[&] {
+        CHECK_THROWS_AS(channel->Send(2), std::runtime_error);
+    }};
     thread.join();
     CHECK(!channel->Recv());
 }
@@ -59,13 +63,13 @@ void TestMoveOnly(auto* channel) {
     }};
 }
 
-inline std::vector<int> Join(const std::vector<std::vector<int>>& values) {
+std::vector<int> Join(const std::vector<std::vector<int>>& values) {
     auto joined = std::views::join(values);
     return {joined.begin(), joined.end()};
 }
 
-inline void CheckValues(const std::vector<std::vector<int>>& send_values,
-                        const std::vector<std::vector<int>>& recv_values) {
+void CheckValues(const std::vector<std::vector<int>>& send_values,
+                 const std::vector<std::vector<int>>& recv_values) {
     auto all_send = Join(send_values);
     auto all_recv = Join(recv_values);
     std::ranges::sort(all_send);
@@ -73,6 +77,8 @@ inline void CheckValues(const std::vector<std::vector<int>>& send_values,
     REQUIRE(all_send == all_recv);
     REQUIRE(all_send.size() > 5'000);
 }
+
+}  // namespace
 
 namespace CheckMTImpl {
     inline std::mutex mutex;
