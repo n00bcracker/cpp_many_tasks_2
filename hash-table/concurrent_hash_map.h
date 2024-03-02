@@ -19,7 +19,7 @@ public:
     }
 
     ConcurrentHashMap(int expected_size, int expected_threads_count, const Hash& hasher = {})
-        : table_(), hasher_(hasher), mutexes_(expected_threads_count) {
+        : table_(), hasher_(hasher) {
         if (expected_size != kUndefinedSize) {
             const size_t lists_cnt =
                 ((((expected_size - 1) / kLoadFactor + 1) - 1) / expected_threads_count + 1) *
@@ -27,9 +27,11 @@ public:
             table_ =
                 std::vector<std::list<std::pair<K, V>>>(lists_cnt, std::list<std::pair<K, V>>{});
         } else {
-            table_ = std::vector<std::list<std::pair<K, V>>>(expected_threads_count,
+            table_ = std::vector<std::list<std::pair<K, V>>>(4 * expected_threads_count,
                                                              std::list<std::pair<K, V>>{});
         }
+
+         mutexes_ = std::vector<std::mutex>(table_.size());
 
         is_rehashing_.clear();
     }
