@@ -45,9 +45,7 @@ public:
             }
         }
 
-        if (size_ / table_.size() > kLoadFactor) {
-            Rehash();
-        }
+        Rehash();
 
         return res;
     }
@@ -158,45 +156,49 @@ private:
     }
 
     void Rehash() {
-        for (int i = 0; i < std::ssize(mutexes_); ++i) {
-            mutexes_[i].lock();
-        }
+        std::lock_guard lock(size_check_mutex_);
+        if (size_ / table_.size() > kLoadFactor) {
+            for (int i = 0; i < std::ssize(mutexes_); ++i) {
+                mutexes_[i].lock();
+            }
 
-        table_.resize(table_.size() * 2);
+            table_.resize(table_.size() * 2);
 
-        for (size_t list_idx = 0; list_idx < table_.size(); ++list_idx) {
-            auto& list = table_[list_idx];
-            for (auto it = list.begin(); it != list.end();) {
-                const auto hash = hasher_(it->first);
-                const auto new_list_idx = hash % table_.size();
-                if (new_list_idx != list_idx) {
-                    auto elem = std::move(*it);
-                    InsertIntoList(new_list_idx, std::move(elem));
-                    if (it == list.begin()) {
-                        list.erase(it);
-                        it = list.begin();
+            for (size_t list_idx = 0; list_idx < table_.size(); ++list_idx) {
+                auto& list = table_[list_idx];
+                for (auto it = list.begin(); it != list.end();) {
+                    const auto hash = hasher_(it->first);
+                    const auto new_list_idx = hash % table_.size();
+                    if (new_list_idx != list_idx) {
+                        auto elem = std::move(*it);
+                        InsertIntoList(new_list_idx, std::move(elem));
+                        if (it == list.begin()) {
+                            list.erase(it);
+                            it = list.begin();
+                        } else {
+                            auto remove_it = it;
+                            --it;
+                            list.erase(remove_it);
+                            ++it;
+                        }
                     } else {
-                        auto remove_it = it;
-                        --it;
-                        list.erase(remove_it);
                         ++it;
                     }
-                } else {
-                    ++it;
                 }
             }
-        }
 
-        for (int i = std::ssize(mutexes_) - 1; i >= 0; --i) {
-            mutexes_[i].unlock();
+            for (int i = std::ssize(mutexes_) - 1; i >= 0; --i) {
+                mutexes_[i].unlock();
+            }
         }
     }
 
     static constexpr auto kDefaultConcurrencyLevel = 8;
-    static constexpr auto kLoadFactor = 1.2;
+    static constexpr auto kLoadFactor = 1.5;
 
     std::vector<std::list<std::pair<K, V>>> table_;
     Hash hasher_;
     mutable std::vector<std::mutex> mutexes_;
+    mutable std::mutex size_check_mutex_;
     std::atomic_size_t size_;
 };
