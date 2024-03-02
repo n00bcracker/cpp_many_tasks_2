@@ -22,7 +22,7 @@ public:
         : table_(), hasher_(hasher), mutexes_(expected_threads_count) {
         if (expected_size != kUndefinedSize) {
             const size_t lists_cnt =
-                (((expected_size - 1) / kLoadFactor + 1) - 1 / expected_threads_count + 1) *
+                ((((expected_size - 1) / kLoadFactor + 1) - 1) / expected_threads_count + 1) *
                 expected_threads_count;
             table_ =
                 std::vector<std::list<std::pair<K, V>>>(lists_cnt, std::list<std::pair<K, V>>{});
@@ -201,7 +201,7 @@ private:
     }
 
     static constexpr auto kDefaultConcurrencyLevel = 8;
-    static constexpr auto kLoadFactor = 1.1;
+    static constexpr auto kLoadFactor = 2;
 
     std::vector<std::list<std::pair<K, V>>> table_;
     Hash hasher_;
