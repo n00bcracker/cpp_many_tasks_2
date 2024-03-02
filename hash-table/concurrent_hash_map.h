@@ -31,7 +31,7 @@ public:
                                                              std::list<std::pair<K, V>>{});
         }
 
-         mutexes_ = std::vector<std::mutex>(table_.size());
+        mutexes_ = std::vector<std::mutex>(table_.size());
 
         is_rehashing_.clear();
     }
