@@ -193,7 +193,7 @@ private:
     }
 
     static constexpr auto kDefaultConcurrencyLevel = 8;
-    static constexpr auto kLoadFactor = 1.5;
+    static constexpr auto kLoadFactor = 1.2;
 
     std::vector<std::list<std::pair<K, V>>> table_;
     Hash hasher_;
