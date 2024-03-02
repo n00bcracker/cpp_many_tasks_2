@@ -45,7 +45,9 @@ public:
             }
         }
 
-        Rehash();
+        if (size_ / table_.size() > kLoadFactor) {
+            Rehash();
+        }
 
         return res;
     }
