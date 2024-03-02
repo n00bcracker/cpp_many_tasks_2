@@ -30,12 +30,15 @@ public:
             table_ = std::vector<std::list<std::pair<K, V>>>(expected_threads_count,
                                                              std::list<std::pair<K, V>>{});
         }
+
+        is_rehashing_.clear();
     }
 
     bool Insert(const K& key, const V& value) {
         const auto hash = hasher_(key);
         const auto mutex_idx = hash % mutexes_.size();
         bool res;
+        bool need_rehash = false;
         {
             std::lock_guard lock(mutexes_[mutex_idx]);
             const auto list_idx = hash % table_.size();
@@ -43,10 +46,15 @@ public:
             if ((res = InsertIntoList(list_idx, std::pair<K, V>(key, value)))) {
                 ++size_;
             }
+
+            if (size_ / table_.size() > kLoadFactor) {
+                need_rehash = true;
+            }
         }
 
-        if (size_ / table_.size() > kLoadFactor) {
+        if (need_rehash && !is_rehashing_.test_and_set()) {
             Rehash();
+            is_rehashing_.clear();
         }
 
         return res;
@@ -158,40 +166,37 @@ private:
     }
 
     void Rehash() {
-        std::lock_guard lock(size_check_mutex_);
-        if (size_ / table_.size() > kLoadFactor) {
-            for (int i = 0; i < std::ssize(mutexes_); ++i) {
-                mutexes_[i].lock();
-            }
+        for (int i = 0; i < std::ssize(mutexes_); ++i) {
+            mutexes_[i].lock();
+        }
 
-            table_.resize(table_.size() * 2);
+        table_.resize(table_.size() * 2);
 
-            for (size_t list_idx = 0; list_idx < table_.size(); ++list_idx) {
-                auto& list = table_[list_idx];
-                for (auto it = list.begin(); it != list.end();) {
-                    const auto hash = hasher_(it->first);
-                    const auto new_list_idx = hash % table_.size();
-                    if (new_list_idx != list_idx) {
-                        auto elem = std::move(*it);
-                        InsertIntoList(new_list_idx, std::move(elem));
-                        if (it == list.begin()) {
-                            list.erase(it);
-                            it = list.begin();
-                        } else {
-                            auto remove_it = it;
-                            --it;
-                            list.erase(remove_it);
-                            ++it;
-                        }
+        for (size_t list_idx = 0; list_idx < table_.size(); ++list_idx) {
+            auto& list = table_[list_idx];
+            for (auto it = list.begin(); it != list.end();) {
+                const auto hash = hasher_(it->first);
+                const auto new_list_idx = hash % table_.size();
+                if (new_list_idx != list_idx) {
+                    auto elem = std::move(*it);
+                    InsertIntoList(new_list_idx, std::move(elem));
+                    if (it == list.begin()) {
+                        list.erase(it);
+                        it = list.begin();
                     } else {
+                        auto remove_it = it;
+                        --it;
+                        list.erase(remove_it);
                         ++it;
                     }
+                } else {
+                    ++it;
                 }
             }
+        }
 
-            for (int i = std::ssize(mutexes_) - 1; i >= 0; --i) {
-                mutexes_[i].unlock();
-            }
+        for (int i = std::ssize(mutexes_) - 1; i >= 0; --i) {
+            mutexes_[i].unlock();
         }
     }
 
@@ -201,6 +206,6 @@ private:
     std::vector<std::list<std::pair<K, V>>> table_;
     Hash hasher_;
     mutable std::vector<std::mutex> mutexes_;
-    mutable std::mutex size_check_mutex_;
     std::atomic_size_t size_;
+    std::atomic_flag is_rehashing_;
 };
