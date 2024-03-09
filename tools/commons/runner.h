@@ -13,11 +13,14 @@ public:
 
     template <class Function, class... Args>
     void Do(Function&& func, Args&&... args) {
-        threads_.emplace_back([this](Function&& func, Args&&... args) mutable {
-            while (iteration_.fetch_add(1, std::memory_order::relaxed) < num_iterations_) {
-                func(std::forward<Args>(args)...);
-            }
-        }, std::forward<Function>(func), std::forward<Args>(args)...);
+        threads_.emplace_back(
+            [this](std::remove_reference_t<Function>&& func,
+                   std::remove_reference_t<Args>&&... args) mutable {
+                while (iteration_.fetch_add(1, std::memory_order::relaxed) < num_iterations_) {
+                    func(std::forward<Args>(args)...);
+                }
+            },
+            std::forward<Function>(func), std::forward<Args>(args)...);
     }
 
     void Wait() {
@@ -47,7 +50,7 @@ public:
         : func_{std::move(other.func_)}, on_exit_{std::move(other.on_exit_)} {
         other.on_exit_.reset();
     }
-    
+
     template <class... Args>
     auto operator()(Args&&... args) {
         return func_(std::forward<Args>(args)...);
@@ -75,10 +78,9 @@ public:
 
     template <class InitFunction, class Function, class... Args>
     void DoWithInit(InitFunction&& init_f, Function&& func, Args&&... args) {
-        threads_.emplace_back([this,
-                init_f = std::forward<InitFunction>(init_f),
-                func = std::forward<Function>(func),
-                ... args = std::forward<Args>(args)]() mutable {
+        threads_.emplace_back([this, init_f = std::forward<InitFunction>(init_f),
+                               func = std::forward<Function>(func),
+                               ... args = std::forward<Args>(args)]() mutable {
             init_f();
             size_t num_iterations = 0;
             while (flag_.test(std::memory_order::relaxed)) {
