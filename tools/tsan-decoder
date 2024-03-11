@@ -1,0 +1,15 @@
+#!/usr/bin/env perl
+
+use warnings;
+use strict;
+
+while(<STDIN>) {
+    if (/<null> \((.+)\+(0x[0-9a-fA-F]+)\)$/) {
+        my $lineNum = `addr2line -e $1 $2 2>/dev/null`;
+        chomp $lineNum;
+        if ($? == 0) {
+            s/<null> \($1\+0x[0-9a-fA-F]+\)$/$lineNum/;
+        }
+    }
+    print;
+}
