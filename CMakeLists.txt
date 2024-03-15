@@ -62,7 +62,7 @@ add_if_exists(hazard-ptr)
 add_if_exists(lock-free-stack)
 add_if_exists(sync-map)
 
-# add_if_exists(executor)
+add_if_exists(executor)
 
 # if (UNIX AND NOT APPLE)
 #   include(tools/cmake/Protobuf.cmake)

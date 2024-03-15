@@ -11,7 +11,7 @@ Multiple Producer Single Consumer. Множество потоков могут 
 ```c++
 struct Node {
     T value;
-    Node *next;
+    Node* next;
 };
 
 std::atomic<Node*> head;
