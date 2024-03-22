@@ -47,4 +47,5 @@ target_link_libraries(bench_cactus_context PRIVATE cactus)
 # add_catch(bench_cactus_net_ping_pong net/net_ping_pong_benchmark.cpp)
 # target_link_libraries(bench_cactus_net_ping_pong PRIVATE cactus)
 
+add_subdirectory(examples)
 # add_subdirectory(rpc)

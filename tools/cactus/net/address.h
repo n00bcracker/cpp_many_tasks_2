@@ -178,6 +178,18 @@ private:
 
     friend size_t std::hash<SocketAddress>::operator()(const SocketAddress&) const;
 
+
+    friend std::ostream& operator<<(std::ostream& os, const SocketAddress& address) {
+        if (const auto& a = address.address_) {
+            char str[INET_ADDRSTRLEN];
+            ::inet_ntop(AF_INET, &(a->sin_addr.s_addr), str, INET_ADDRSTRLEN);
+            os << str << ':' << a->sin_port;
+        } else {
+            os << "[nullopt]";
+        }
+        return os;
+    }
+
     std::optional<sockaddr_in> address_;
 };
 
