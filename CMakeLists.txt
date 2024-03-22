@@ -22,10 +22,6 @@ include_directories(tools/commons)
 include(tools/cmake/TestSolution.cmake)
 include(tools/cmake/BuildFlags.cmake)
 
-if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/private)
-  add_subdirectory(private)
-endif()
-
 function(add_if_exists name)
   if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${name})
     add_subdirectory(${name})
@@ -64,41 +60,35 @@ add_if_exists(sync-map)
 
 add_if_exists(executor)
 
-# if (UNIX AND NOT APPLE)
-#   include(tools/cmake/Protobuf.cmake)
-#   if (ENABLE_PRIVATE_TESTS)
-#     set(FOLLY_DIR "/opt/installed-folly")
-#   else()
-#     set(FOLLY_DIR "tools/folly")
-#   endif()
-#   find_package(Boost HINTS ${FOLLY_DIR})
-#   find_package(fmt HINTS ${FOLLY_DIR})
-#   find_package(folly HINTS ${FOLLY_DIR})
-#   find_package(gflags HINTS ${FOLLY_DIR})
+if (UNIX AND NOT APPLE)
+  include(tools/cmake/Protobuf.cmake)
+  find_package(glog)
 
-#   if (Protobuf_FOUND AND Boost_FOUND AND fmt_FOUND AND folly_FOUND AND gflags_FOUND)
-#     message("Networking tasks are enabled")
+  if (Protobuf_FOUND AND glog_FOUND)
+    message("Networking tasks are enabled")
 
-#     add_if_exists(tools/cactus)
+    add_if_exists(tools/cactus)
 
-#     add_if_exists(portscan)
-#     add_if_exists(portknock)
-#     add_if_exists(socks4)
-#     add_if_exists(fanout)
+    add_if_exists(portscan)
+    add_if_exists(portknock)
+    add_if_exists(socks4)
+    add_if_exists(fanout)
 
-#     add_if_exists(socksd)
-#     add_if_exists(balancer)
+    add_if_exists(socksd)
+    add_if_exists(balancer)
 
-#     add_if_exists(tools/redis)
-#   else()
-#     message(WARNING "Networking tasks disabled")
-#   endif()
+    # add_if_exists(tools/redis)
+  else()
+    message(WARNING "Networking tasks disabled. "
+      "Protobuf:${Protobuf_FOUND} glog:${glog_FOUND}"
+    )
+  endif()
 
-# else()
-#   message(WARNING "For networking tasks only Linux is supported. "
-#     "See instructions for remote toolchain setup."
-#   )
-# endif()
+else()
+  message(WARNING "For networking tasks only Linux is supported. "
+    "See instructions for remote toolchain setup."
+  )
+endif()
 
 # add_if_exists(sfinae)
 # add_if_exists(compile-eval)
@@ -117,3 +107,7 @@ add_if_exists(executor)
 
 # add_if_exists(matrix-2.0)
 # add_if_exists(matrix-3.0)
+
+if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/private)
+  add_subdirectory(private)
+endif()

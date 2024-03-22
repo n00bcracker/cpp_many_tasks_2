@@ -52,15 +52,15 @@ $ ip a
 # (IP + Port) == SocketAddress
 
 ```c++
-folly::SocketAddress local_http{"127.0.0.1", 8080};
+cactus::SocketAddress local_http{"127.0.0.1", 8080};
 
-local_http.setPort(8888);
+local_http.SetPort(8888);
 
 // 0.0.0.0 имеет особый смысл.
-folly::SocketAddress local_http{"0.0.0.0", 80};
+cactus::SocketAddress local_http{"0.0.0.0", 80};
 
 // 0 порт имеет особый смысл.
-folly::SocketAddress local_http{"127.0.0.1", 0};
+cactus::SocketAddress local_http{"127.0.0.1", 0};
 ```
 
 ---
@@ -72,13 +72,11 @@ folly::SocketAddress local_http{"127.0.0.1", 0};
 * DNS - превращает имя в адрес.
 
 ```shell
-$ dig yandex.ru
+$ dig ya.ru
 
 ;; ANSWER SECTION:
-yandex.ru.      166 IN  A   5.255.255.77
-yandex.ru.      166 IN  A   77.88.55.77
-yandex.ru.      166 IN  A   77.88.55.80
-yandex.ru.      166 IN  A   5.255.255.80
+ya.ru.			198	IN	A	5.255.255.242
+ya.ru.			198	IN	A	77.88.55.242
 ```
 
 ---
@@ -141,10 +139,10 @@ Read() = ""
 # cactus
 
 * Чтобы написать что-то интересное, нужны библиотеки.
-* В С++ с этим всё не так хорошо, как хотелось бы.
+* В C++ с этим всё не так хорошо, как хотелось бы.
 * Учебный проект. Как `xv6`, но для курса C++.
 
-```с++
+```c++
 #include <cactus/cactus.h>
 
 int main() {
@@ -170,14 +168,14 @@ int main() {
 * `cactus::View` - функция конструктор.
 
 ```c++
+int x = 42;
+cactus::View(x); // MutableView
 std::array<char, 4> ping = {'p', 'i', 'n', 'g'};
-View(ping); // MutableView
+cactus::View(ping); // MutableView
 std::vector<char> buf(1024);
-View(buf); // MutableView
-std::string str(100, 'f');
-View(str); // MutableView
-const Pod pod[1];
-View(pod); // ConstView
+cactus::View(buf); // MutableView
+const Pod pod;
+cactus::View(pod); // ConstView
 ```
 
 ---
@@ -221,8 +219,8 @@ public:
 * `TimePoint - TimePoint = Duration`
 
 ```c++
-typedef std::chrono::nanoseconds Duration;
-typedef std::chrono::steady_clock::time_point TimePoint;
+using Duration = std::chrono::nanoseconds;
+using TimePoint = std::chrono::steady_clock::time_point;
 ```
 
 ---
@@ -232,7 +230,7 @@ typedef std::chrono::steady_clock::time_point TimePoint;
 * `DialTCP` устанавливает соединение.
 
 ```c++
-std::unique_ptr<IConn> DialTCP(const folly::SocketAddress& to);
+std::unique_ptr<IConn> DialTCP(const cactus::SocketAddress& to);
 ```
 
 ---
@@ -247,8 +245,8 @@ public:
     virtual size_t Read(MutableView buf) = 0;
     virtual void Write(ConstView buf) = 0;
     virtual void Close() = 0;
-    virtual const folly::SocketAddress& RemoteAddress() const = 0;
-    virtual const folly::SocketAddress& LocalAddress() const = 0;
+    virtual const cactus::SocketAddress& RemoteAddress() const = 0;
+    virtual const cactus::SocketAddress& LocalAddress() const = 0;
 };
 ```
 
@@ -257,7 +255,7 @@ public:
 # Timeout
 
 ```c++
-void Connect(folly::SocketAddress addr) {
+void Connect(const cactus::SocketAddress& addr) {
     cactus::TimeoutGuard guard{std::chrono::seconds(5)};
     try {
         auto conn = DialTCP(addr);
