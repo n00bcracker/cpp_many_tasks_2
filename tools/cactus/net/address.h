@@ -17,7 +17,7 @@ namespace cactus {
 
 class SocketAddress;
 
-}  // namespace
+}  // namespace cactus
 
 namespace std {
 
@@ -177,7 +177,6 @@ private:
     }
 
     friend size_t std::hash<SocketAddress>::operator()(const SocketAddress&) const;
-
 
     friend std::ostream& operator<<(std::ostream& os, const SocketAddress& address) {
         if (const auto& a = address.address_) {

@@ -95,6 +95,7 @@ auto Now() {
 }  // namespace
 
 TEST("Destructor") {
+    MakeThreadPoolExecutor(N);
 }
 
 TEST("StartShutdown") {

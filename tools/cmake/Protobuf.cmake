@@ -21,5 +21,5 @@ function(add_proto_library target_name proto_file)
 
   add_library(${target_name} ${SRC})
   target_link_libraries(${target_name} PUBLIC cactus protobuf)
-  target_include_directories(${target_name} PUBLIC ${CMAKE_BINARY_DIR}/tools)
+  target_include_directories(${target_name} SYSTEM PUBLIC ${CMAKE_BINARY_DIR}/tools)
 endfunction()

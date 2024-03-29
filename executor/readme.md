@@ -86,7 +86,7 @@ public:
 bool DoComputation(std::shared_ptr<Executor> pool, Params params) {
     auto my_task = std::make_shared<MyPrimeSplittingTask>(params);
     pool->Submit(my_task);
-    my_task.Wait();
+    my_task->Wait();
     return my_task->is_prime;
 }
 ```

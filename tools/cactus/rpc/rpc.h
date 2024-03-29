@@ -1,5 +1,9 @@
 #pragma once
 
+#include <memory>
+#include <string>
+#include <exception>
+
 #include <google/protobuf/descriptor.h>
 
 #include <cactus/cactus.h>
@@ -22,7 +26,7 @@ public:
 
 class RpcCallError : public std::exception {
 public:
-    RpcCallError(const std::string& error) : error_{error} {
+    explicit RpcCallError(std::string error) : error_{std::move(error)} {
     }
 
     const char* what() const noexcept override {
@@ -35,7 +39,7 @@ private:
 
 class SimpleRpcChannel : public IRpcChannel {
 public:
-    explicit SimpleRpcChannel(const folly::SocketAddress& server) : server_{server} {
+    explicit SimpleRpcChannel(const SocketAddress& server) : server_{server} {
     }
 
     void CallMethod(const google::protobuf::MethodDescriptor* method,
@@ -43,23 +47,28 @@ public:
                     google::protobuf::Message* response) override;
 
 private:
-    folly::SocketAddress server_;
+    SocketAddress server_;
 };
 
 class SimpleRpcServer {
 public:
-    explicit SimpleRpcServer(const folly::SocketAddress& at) : lsn_{ListenTCP(at)} {
+    explicit SimpleRpcServer(const SocketAddress& at) : lsn_{ListenTCP(at)} {
     }
 
-    void Register(IRpcService* service) {
-        services_[service->ServiceDescriptor()->full_name()] = service;
+    void Register(std::unique_ptr<IRpcService> service) {
+        auto name = service->ServiceDescriptor()->full_name();
+        services_[std::move(name)] = std::move(service);
+    }
+
+    const SocketAddress& GetAddress() const {
+        return lsn_->Address();
     }
 
     void Serve();
 
 private:
     std::unique_ptr<IListener> lsn_;
-    std::unordered_map<std::string, IRpcService*> services_;
+    std::unordered_map<std::string, std::unique_ptr<IRpcService>> services_;
     ServerGroup group_;
 };
 

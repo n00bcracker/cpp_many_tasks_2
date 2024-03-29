@@ -48,4 +48,4 @@ target_link_libraries(bench_cactus_context PRIVATE cactus)
 # target_link_libraries(bench_cactus_net_ping_pong PRIVATE cactus)
 
 add_subdirectory(examples)
-# add_subdirectory(rpc)
+add_subdirectory(rpc)

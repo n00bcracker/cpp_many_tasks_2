@@ -6,12 +6,12 @@
 
 namespace cactus {
 
-#define INTERNAL_FIBER_TEST_CASE(TestName, ...) \
-    static void TestName();                     \
-    TEST_CASE(__VA_ARGS__) {                    \
-        ::cactus::Scheduler scheduler;          \
-        scheduler.Run([&] { TestName(); });     \
-    }                                           \
+#define INTERNAL_FIBER_TEST_CASE(TestName, ...)            \
+    static void TestName();                                \
+    TEST_CASE(__VA_ARGS__) {                               \
+        ::cactus::Scheduler scheduler;                     \
+        scheduler.Run([&] { CHECK_NOTHROW(TestName()); }); \
+    }                                                      \
     static void TestName()
 
 #define INTERNAL_FIBER_MAKE_NAME_IMPL(counter) CactusTest##counter
