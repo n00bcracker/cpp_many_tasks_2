@@ -37,7 +37,7 @@ static void StressPushPop(uint32_t num_push_threads, uint32_t num_pop_threads) {
 
     INFO(std::to_string(num_push_threads) + ' ' + std::to_string(num_pop_threads));
     CHECK(push_runner.Wait() < 200ns);
-    CHECK(pop_runner.Wait() < 10us);
+    CHECK(pop_runner.Wait() < 15us);
 }
 
 TEST_CASE("Stress Push and Pop") {

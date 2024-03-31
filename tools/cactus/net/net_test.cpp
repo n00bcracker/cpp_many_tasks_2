@@ -98,3 +98,25 @@ FIBER_TEST_CASE("Cancel dial") {
 
     Yield();
 }
+
+FIBER_TEST_CASE("Test Address") {
+    {
+        SocketAddress address{"127.0.0.1", 10'000};
+        CHECK(address.GetPort() == 10'000);
+        CHECK(address == address);
+        address.SetPort(10'001);
+        CHECK(address.GetPort() == 10'001);
+
+        auto address2 = address;
+        CHECK(address == address2);
+        address.SetPort(10'000);
+        CHECK(address != address2);
+    }
+    {
+        SocketAddress address{"localhost", 10'000, true};
+        CHECK(address.GetPort() == 10'000);
+        CHECK(address == address);
+        address.SetPort(10'001);
+        CHECK(address.GetPort() == 10'001);
+    }
+}

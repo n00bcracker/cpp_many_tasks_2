@@ -68,7 +68,7 @@ public:
             auto port_str = std::to_string(port) + '\0';
             auto info = GetAddrInfo(address_str.data(), port_str.data());
             SetFromSockaddr(info->ai_addr, info->ai_addrlen);
-            address_->sin_port = port;
+            address_->sin_port = ::htons(port);
             return;
         }
 
@@ -83,7 +83,7 @@ public:
             throw std::system_error(errno, std::generic_category());
         };
         sa.sin_family = AF_INET;
-        sa.sin_port = port;
+        sa.sin_port = ::htons(port);
         address_ = sa;
     }
 
@@ -91,7 +91,7 @@ public:
         sockaddr_in sa{};
         sa.sin_addr.s_addr = address;
         sa.sin_family = AF_INET;
-        sa.sin_port = port;
+        sa.sin_port = ::htons(port);
         address_ = sa;
     }
 
@@ -132,12 +132,12 @@ public:
 
     uint16_t GetPort() const {
         CheckEmpty();
-        return address_->sin_port;
+        return ::ntohs(address_->sin_port);
     }
 
     void SetPort(uint16_t port) {
         CheckEmpty();
-        address_->sin_port = port;
+        address_->sin_port = ::htons(port);
     }
 
     uint32_t GetIp() const {
@@ -182,7 +182,7 @@ private:
         if (const auto& a = address.address_) {
             char str[INET_ADDRSTRLEN];
             ::inet_ntop(AF_INET, &(a->sin_addr.s_addr), str, INET_ADDRSTRLEN);
-            os << str << ':' << a->sin_port;
+            os << str << ':' << ::ntohs(a->sin_port);
         } else {
             os << "[nullopt]";
         }
