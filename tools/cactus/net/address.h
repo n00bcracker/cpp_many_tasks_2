@@ -38,58 +38,16 @@ struct hash<cactus::SocketAddress> {
 namespace cactus {
 
 class SocketAddress {
-private:
-    struct Deleter {
-        void operator()(addrinfo* p) const noexcept {
-            ::freeaddrinfo(p);
-        }
-    };
-
-    auto GetAddrInfo(const char* host, const char* port) const {
-        addrinfo hints;
-        std::memset(&hints, 0, sizeof(hints));
-        hints.ai_family = AF_UNSPEC;
-        hints.ai_socktype = SOCK_STREAM;
-        hints.ai_flags = AI_PASSIVE | AI_NUMERICSERV;
-
-        addrinfo* results;
-        if (auto error = ::getaddrinfo(host, port, &hints, &results)) {
-            throw std::system_error{error, std::generic_category(), "failed to resolve address"};
-        }
-        return std::unique_ptr<addrinfo, Deleter>{results};
-    }
-
 public:
     SocketAddress() = default;
 
     SocketAddress(std::string_view address, uint16_t port, bool lookup = false) {
-        if (lookup) {
-            auto address_str = std::string{address} + '\0';
-            auto port_str = std::to_string(port) + '\0';
-            auto info = GetAddrInfo(address_str.data(), port_str.data());
-            SetFromSockaddr(info->ai_addr, info->ai_addrlen);
-            address_->sin_port = ::htons(port);
-            return;
-        }
-
-        if (address.size() >= INET_ADDRSTRLEN) {
-            throw std::invalid_argument{"address is too long"};
-        }
-        char array[INET_ADDRSTRLEN] = {};
-        std::ranges::copy(address, array);
-
-        sockaddr_in sa{};
-        if (::inet_pton(AF_INET, array, &sa.sin_addr) < 0) {
-            throw std::system_error(errno, std::generic_category());
-        };
-        sa.sin_family = AF_INET;
-        sa.sin_port = ::htons(port);
-        address_ = sa;
+        lookup ? InitFromName(address, port) : InitFromIp(address, port);
     }
 
-    SocketAddress(uint32_t address, uint16_t port) {
+    SocketAddress(uint32_t ip, uint16_t port) {
         sockaddr_in sa{};
-        sa.sin_addr.s_addr = address;
+        sa.sin_addr.s_addr = ip;
         sa.sin_family = AF_INET;
         sa.sin_port = ::htons(port);
         address_ = sa;
@@ -160,6 +118,50 @@ public:
     };
 
 private:
+    struct Deleter {
+        void operator()(addrinfo* p) const noexcept {
+            ::freeaddrinfo(p);
+        }
+    };
+
+    auto GetAddrInfo(const char* host, const char* port) const {
+        addrinfo hints;
+        std::memset(&hints, 0, sizeof(hints));
+        hints.ai_family = AF_UNSPEC;
+        hints.ai_socktype = SOCK_STREAM;
+        hints.ai_flags = AI_PASSIVE | AI_NUMERICSERV;
+
+        addrinfo* results;
+        if (auto error = ::getaddrinfo(host, port, &hints, &results)) {
+            throw std::system_error{error, std::generic_category(), "failed to resolve address"};
+        }
+        return std::unique_ptr<addrinfo, Deleter>{results};
+    }
+
+    void InitFromName(std::string_view name, uint16_t port) {
+        std::string address_str{name};
+        auto port_str = std::to_string(port);
+        auto info = GetAddrInfo(address_str.c_str(), port_str.c_str());
+        SetFromSockaddr(info->ai_addr, info->ai_addrlen);
+        address_->sin_port = ::htons(port);
+    }
+
+    void InitFromIp(std::string_view ip, uint16_t port) {
+        if (ip.size() >= INET_ADDRSTRLEN) {
+            throw std::invalid_argument{"address is too long"};
+        }
+        char array[INET_ADDRSTRLEN] = {};
+        std::ranges::copy(ip, array);
+
+        sockaddr_in sa{};
+        if (::inet_pton(AF_INET, array, &sa.sin_addr) < 0) {
+            throw std::system_error(errno, std::generic_category());
+        };
+        sa.sin_family = AF_INET;
+        sa.sin_port = ::htons(port);
+        address_ = sa;
+    }
+
     void CheckEmpty() const {
         if (!address_) {
             throw std::runtime_error{"address is empty"};

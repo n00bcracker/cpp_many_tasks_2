@@ -17,7 +17,6 @@ message PingRequest {}
 message PingResponse {}
 
 service TestService {
-    rpc Search (TestRequest) returns (TestResponse) {}
-
-    rpc Ping (PingRequest) returns (PingResponse) {}
+    rpc Search(TestRequest) returns (TestResponse);
+    rpc Ping(PingRequest) returns (PingResponse);
 }

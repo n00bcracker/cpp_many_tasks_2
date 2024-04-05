@@ -4,7 +4,7 @@ function(add_proto_library target_name proto_file)
   get_filename_component(ABS_FILE ${proto_file} ABSOLUTE)
   get_filename_component(FILE_WE ${proto_file} NAME_WE)
 
-  set(PROTOC_GEN_RPC ${CMAKE_BINARY_DIR}/protoc-gen-rpc)
+  set(PROTOC_GEN_RPC ${CMAKE_BINARY_DIR}/protoc_gen_rpc)
   set(HEADER ${CMAKE_CURRENT_BINARY_DIR}/${FILE_WE}.pb.h)
   set(SRC ${CMAKE_CURRENT_BINARY_DIR}/${FILE_WE}.pb.cc)
 

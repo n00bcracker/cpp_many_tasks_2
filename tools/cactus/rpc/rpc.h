@@ -56,8 +56,10 @@ public:
     }
 
     void Register(std::unique_ptr<IRpcService> service) {
-        auto name = service->ServiceDescriptor()->full_name();
-        services_[std::move(name)] = std::move(service);
+        const auto& name = service->ServiceDescriptor()->full_name();
+        if (!services_.emplace(name, std::move(service)).second) {
+            throw std::runtime_error{"Service already registered"};
+        }
     }
 
     const SocketAddress& GetAddress() const {
