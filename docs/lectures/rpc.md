@@ -45,6 +45,14 @@ service SearchService {
 
 ---
 
+# protobuf compiler
+
+* Отдельный `.proto` файл описывает протокол
+* `protoc` генерирует код для работы с протоколом в C++
+* Из `rpc.proto` получаются файлы `rpc.pb.h` и `rpc.pb.cc` 
+
+---
+
 # protobuf serialization
 
 ```
