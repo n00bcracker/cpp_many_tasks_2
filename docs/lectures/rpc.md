@@ -4,6 +4,84 @@
 
 ---
 
+# Что такое RPC?
+
+* Remote Produce Call
+* Сервер реализует методы
+* Клиент вызывает методы
+
+---
+
+# Как вызвать метод по сети
+
+```
+Result MyMethod(Argument arg);
+```
+
+* Нужно как-то передать Argument по сети
+* Нужно как-то передать имя метода на сервер
+* Что делать если MyMethod упадёт с исключением?
+* Клиенту нужно знать адрес сервера
+
+---
+
+# protobuf
+
+* Формат передачи данных и описание RPC
+
+```
+message SearchRequest {
+    string query = 1;
+}
+
+message SearchResponse {
+    repeated string result = 1;
+}
+
+service SearchService {
+    rpc Search (SearchRequest) returns (SearchResponse) {}
+}
+```
+
+---
+
+# protobuf serialization
+
+```
+class SearchRequest : public Message {};
+
+class Message {
+public:
+    virtual std::string SerializeToString() = 0;
+    virtual bool ParseFromString(const std::string& blob) = 0;
+}
+```
+
+```
+SearchRequest request;
+auto blob = request.SerializeToString();
+// In the other process
+SearchRequest request;
+if (!request.ParseFromString(blob)) throw std::runtime_error("invalid msg");
+```
+
+---
+
+# protobuf service
+
+```
+service SearchService {
+    rpc Search (SearchRequest) returns (SearchResponse) {}
+}
+```
+
+Нам нужно 3 вещи:
+* `ServiceDescriptor` с описанием сервиса
+* `SearchServiceClient` класс клиента
+* `SearchServiceHandler` интерфейс сервиса
+
+---
+
 # service descriptor
 
 ```
