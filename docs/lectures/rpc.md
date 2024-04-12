@@ -1,8 +1,4 @@
 ---
-marp: true
-theme: gaia
-class: invert
----
 
 # Собираем RPC
 
