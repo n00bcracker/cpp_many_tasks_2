@@ -213,7 +213,7 @@ Subsets FindEqualSumSubsets(const std::vector<int64_t>& data) {
         return {};
     }
 
-    const size_t k = data.size() > 2 ? data.size() / 3 : 1;
+    const size_t k = data.size() > 2 ? data.size() / 2 : 1;
     const auto sums = ComputeSumMap(data, k);
 
     if (sums.contains(0) && sums.at(0).hasTwoGroups) {
