@@ -9,7 +9,7 @@
 #include <utility>
 #include <vector>
 
-constexpr size_t kThreadCnt = 32;
+constexpr size_t kThreadCnt = 8;
 
 struct Combination {
     size_t choice;
