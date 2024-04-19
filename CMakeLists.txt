@@ -77,7 +77,7 @@ if (UNIX AND NOT APPLE)
     add_if_exists(socksd)
     add_if_exists(balancer)
 
-    # add_if_exists(tools/redis)
+    add_if_exists(redis)
   else()
     message(WARNING "Networking tasks disabled. "
       "Protobuf:${Protobuf_FOUND} glog:${glog_FOUND}"
@@ -90,6 +90,13 @@ else()
   )
 endif()
 
+if (LLVM_FOUND)
+  message("clang-fun enabled")
+  add_if_exists(clang-fun)
+else()
+  message(WARNING "clang-fun disabled")
+endif()
+
 # add_if_exists(sfinae)
 # add_if_exists(compile-eval)
 # add_if_exists(constexpr-map)
@@ -97,13 +104,6 @@ endif()
 # add_if_exists(coroutine)
 # add_if_exists(concepts)
 # add_if_exists(ranges)
-
-# if (LLVM_FOUND)
-#   message("clang-fun enabled")
-#   add_if_exists(clang-fun)
-# else()
-#   message(WARNING "clang-fun disabled")
-# endif()
 
 # add_if_exists(matrix-2.0)
 # add_if_exists(matrix-3.0)

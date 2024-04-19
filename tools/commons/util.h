@@ -2,10 +2,13 @@
 
 #include <string>
 #include <filesystem>
+#include <fstream>
+#include <cstddef>
 
 #ifdef __linux__
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <unistd.h>
 #endif
 
 inline std::filesystem::path GetFileDir(std::string file) {
@@ -55,3 +58,59 @@ private:
     const std::chrono::time_point<Clock> wall_start_ = Clock::now();
     const std::chrono::microseconds cpu_start_ = GetCPUTime();
 };
+
+#ifdef __linux__
+
+inline int64_t GetMemoryUsage() {
+    if (rusage usage; ::getrusage(RUSAGE_SELF, &usage)) {
+        throw std::system_error{errno, std::generic_category()};
+    } else {
+        return usage.ru_maxrss;
+    }
+}
+
+class MemoryGuard {
+public:
+    explicit MemoryGuard(size_t bytes) {
+        if (is_active) {
+            throw std::runtime_error{"There is an active memory guard"};
+        }
+        is_active = true;
+        bytes += GetDataMemoryUsage();
+        if (rlimit limit{bytes, RLIM_INFINITY}; ::setrlimit(RLIMIT_DATA, &limit)) {
+            throw std::system_error{errno, std::generic_category()};
+        }
+    }
+
+    ~MemoryGuard() {
+        is_active = false;
+        rlimit limit{RLIM_INFINITY, RLIM_INFINITY};
+        ::setrlimit(RLIMIT_DATA, &limit);
+    }
+
+    MemoryGuard(const MemoryGuard&) = delete;
+    MemoryGuard& operator=(const MemoryGuard&) = delete;
+
+private:
+    static size_t GetDataMemoryUsage() {
+        size_t pages;
+        std::ifstream in{"/proc/self/statm"};
+        for (auto i = 0; i < 6; ++i){
+            in >> pages;
+        }
+        if (!in) {
+            throw std::runtime_error{"Failed to get number of pages"};
+        }
+        return pages * kPageSize;
+    } 
+
+    static inline const auto kPageSize = ::getpagesize();
+    static inline auto is_active = false;
+};
+
+template <class T = std::byte>
+MemoryGuard MakeMemoryGuard(size_t n) {
+    return MemoryGuard{n * sizeof(T)};
+}
+
+#endif

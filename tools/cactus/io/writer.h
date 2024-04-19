@@ -52,7 +52,7 @@ public:
             str_.resize(2 * str_.size());
         }
 
-        auto chunk = View(str_.data() + size_, str_.size() - size_);
+        auto chunk = cactus::View(str_.data() + size_, str_.size() - size_);
         size_ = str_.size();
         return chunk;
     }
@@ -64,10 +64,8 @@ public:
     virtual void Flush() {
     }
 
-    std::string String() {
-        str_.resize(size_);
-        size_ = 0;
-        return std::move(str_);
+    std::string_view View() const {
+        return {str_.data(), size_};
     }
 
 private:

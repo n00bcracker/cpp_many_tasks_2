@@ -151,4 +151,19 @@ void ViewReader::ReadBackUp(size_t size) {
     pos_ -= size;
 }
 
+LoopReader::LoopReader(ConstView view) : view_{view}, pos_{0} {
+    if (view_.empty()) {
+        throw std::runtime_error{"Empty view"};
+    }
+}
+
+size_t LoopReader::Read(MutableView buf) {
+    if (buf.empty()) {
+        return 0;
+    }
+    buf[0] = view_[pos_++];
+    pos_ %= view_.size();
+    return 1;
+}
+
 }  // namespace cactus

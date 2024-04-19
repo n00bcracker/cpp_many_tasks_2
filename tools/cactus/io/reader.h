@@ -29,6 +29,17 @@ public:
     std::string ReadAllToString();
 };
 
+class LoopReader : public IReader {
+public:
+    explicit LoopReader(ConstView view);
+
+    size_t Read(MutableView buf) override;
+
+private:
+    ConstView view_;
+    size_t pos_;
+};
+
 class IBufferedReader : public IReader {
 public:
     virtual ConstView ReadNext() = 0;
