@@ -1,6 +1,9 @@
 #include "find_subsets.h"
 #include "commons.h"
 
+#include <vector>
+#include <algorithm>
+
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators_all.hpp>
 
@@ -41,6 +44,33 @@ TEST_CASE("Middle") {
 
 TEST_CASE("Negative") {
     Test({1, -1, 3, -3, 5, -5, 7, -7, 15, -15, 62}, true);
+}
+
+TEST_CASE("Tricky") {
+    Test({0, 1, -1, 100, 200, 400, 800, 1'600, 3'200, 6'400, 12'800}, true);
+    Test({100, 200, 400, 800, 1'600, 3'200, 6'400, 12'800, 0, 1, -1}, true);
+}
+
+TEST_CASE("Tricky2") {
+    int64_t prefix[] = {-6, 2, 3};
+    do {
+        std::vector data(std::begin(prefix), std::end(prefix));
+        data.insert(data.end(), {100, 200, 400, 800, 1'600, 3'200, 6'400, 12'800, 1});
+        Test(data, true);
+        std::ranges::reverse(data);
+        Test(data, true);
+    } while (std::ranges::next_permutation(prefix).found);
+}
+
+TEST_CASE("Tricky3") {
+    int64_t prefix[] = {-6, 2, 3};
+    do {
+        std::vector data(std::begin(prefix), std::end(prefix));
+        data.insert(data.end(), {100, 200, 400, 800, 1'600, 3'200, 6'400, 12'800});
+        Test(data, false);
+        std::ranges::reverse(data);
+        Test(data, false);
+    } while (std::ranges::next_permutation(prefix).found);
 }
 
 TEST_CASE("RandomFalse") {

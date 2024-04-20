@@ -112,3 +112,48 @@ TEST_CASE("OnlyWritingOrReading") {
     threads.clear();
     REQUIRE(result == 0);
 }
+
+TEST_CASE("Read-Die-Write") {
+    RWLock rw_lock;
+
+    auto flag = false;
+    REQUIRE_THROWS_AS(rw_lock.Read([] { throw 42; }), int);
+
+    rw_lock.Write([&] { flag = true; });
+    CHECK(flag);
+}
+
+TEST_CASE("Read-Write-Die-Write") {
+    constexpr auto kNumWriters = 100;
+
+    RWLock rw_lock;
+    auto counter = 0;
+    std::atomic num_throws = 0;
+
+    std::jthread reader{[&] {
+        rw_lock.Read([&] {
+            std::this_thread::sleep_for(100ms);
+            CHECK(counter == 0);
+        });
+    }};
+
+    std::this_thread::sleep_for(50ms);
+    std::vector<std::jthread> writers;
+    for (auto i = 0; i < kNumWriters; ++i) {
+        writers.emplace_back([&] {
+            try {
+                rw_lock.Write([&] {
+                    ++counter;
+                    throw 4.2f;
+                });
+            } catch (float) {
+                num_throws.fetch_add(1);
+            } catch (...) {
+            }
+        });
+    }
+
+    writers.clear();
+    CHECK(counter == kNumWriters);
+    CHECK(num_throws.load() == kNumWriters);
+}

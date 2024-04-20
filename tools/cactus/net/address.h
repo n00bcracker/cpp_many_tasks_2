@@ -6,6 +6,7 @@
 #include <string_view>
 #include <cstring>
 #include <algorithm>
+#include <memory>
 
 #include <sys/types.h>
 #include <sys/socket.h>

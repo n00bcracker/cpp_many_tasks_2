@@ -105,8 +105,8 @@ endif()
 # add_if_exists(concepts)
 # add_if_exists(ranges)
 
-# add_if_exists(matrix-2.0)
-# add_if_exists(matrix-3.0)
+add_if_exists(matrix-2.0)
+add_if_exists(matrix-3.0)
 
 if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/private)
   add_subdirectory(private)

@@ -45,12 +45,7 @@ public:
     }
 
     ~SocketConn() final {
-        if (fd_ != -1) {
-            watcher_.Reset();
-            int ret = close(fd_);
-            PCHECK(ret == 0) << "close() system call failed";
-            fd_ = -1;
-        }
+        Close();
     }
 
     virtual size_t Read(MutableView buf) override {

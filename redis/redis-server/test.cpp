@@ -257,5 +257,5 @@ FIBER_TEST_CASE("WrongRequest") {
     conn->Write(cactus::View(req));
 
     char buffer;
-    CHECK_THROWS(conn->Read(cactus::View(buffer)));
+    CHECK_THROWS(conn->ReadFull(cactus::View(buffer)));
 }
