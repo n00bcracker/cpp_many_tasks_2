@@ -53,7 +53,8 @@ bool RpcGenerator::Generate(const google::protobuf::FileDescriptor* file, const 
                 vars["method_input_type"] = method->input_type()->name();
                 vars["method_output_type"] = method->output_type()->name();
 
-                pb_h.Print(vars, "$method_output_type$ $method_name$(const $method_input_type$& req);\n");
+                pb_h.Print(vars,
+                           "$method_output_type$ $method_name$(const $method_input_type$& req);\n");
             }
         }
 
@@ -72,7 +73,8 @@ bool RpcGenerator::Generate(const google::protobuf::FileDescriptor* file, const 
         pb_h.Indent();
         pb_h.Print("void CallMethod(const google::protobuf::MethodDescriptor* method,\n");
         pb_h.Print((std::string(8, '\t') + "const google::protobuf::Message& request,\n").c_str());
-        pb_h.Print((std::string(8, '\t') + "google::protobuf::Message* response) override;\n").c_str());
+        pb_h.Print(
+            (std::string(8, '\t') + "google::protobuf::Message* response) override;\n").c_str());
         pb_h.Print("\n");
 
         if (service->method_count() > 0) {
@@ -83,7 +85,9 @@ bool RpcGenerator::Generate(const google::protobuf::FileDescriptor* file, const 
                 vars["method_input_type"] = method->input_type()->name();
                 vars["method_output_type"] = method->output_type()->name();
 
-                pb_h.Print(vars, "virtual void $method_name$(const $method_input_type$& req, $method_output_type$* rsp) = 0;\n");
+                pb_h.Print(vars,
+                           "virtual void $method_name$(const $method_input_type$& req, "
+                           "$method_output_type$* rsp) = 0;\n");
             }
         }
 
@@ -108,10 +112,14 @@ bool RpcGenerator::Generate(const google::protobuf::FileDescriptor* file, const 
                 vars["method_input_type"] = method->input_type()->name();
                 vars["method_output_type"] = method->output_type()->name();
 
-                pb_cc.Print(vars, "$method_output_type$ $class_name$::$method_name$(const $method_input_type$& req) {");
+                pb_cc.Print(vars,
+                            "$method_output_type$ $class_name$::$method_name$(const "
+                            "$method_input_type$& req) {");
                 pb_cc.Indent();
                 pb_cc.Print(vars, "$method_output_type$ rsp;\n");
-                pb_cc.Print(vars, "const auto* method_descr = $service_name$::descriptor()->FindMethodByName(\"$method_name$\");\n");
+                pb_cc.Print(vars,
+                            "const auto* method_descr = "
+                            "$service_name$::descriptor()->FindMethodByName(\"$method_name$\");\n");
                 pb_cc.Print("channel_->CallMethod(method_descr, req, &rsp);\n");
                 pb_cc.Print("return rsp;\n");
                 pb_cc.Outdent();
@@ -121,8 +129,11 @@ bool RpcGenerator::Generate(const google::protobuf::FileDescriptor* file, const 
         }
 
         vars["class_name"] = service->name() + "Handler";
-        pb_cc.Print(vars, "void $class_name$::CallMethod(const google::protobuf::MethodDescriptor* method,\n");
-        pb_cc.Print((std::string(18, '\t') + "const google::protobuf::Message& request,\n").c_str());
+        pb_cc.Print(
+            vars,
+            "void $class_name$::CallMethod(const google::protobuf::MethodDescriptor* method,\n");
+        pb_cc.Print(
+            (std::string(18, '\t') + "const google::protobuf::Message& request,\n").c_str());
         pb_cc.Print((std::string(18, '\t') + "google::protobuf::Message* response) {\n").c_str());
         if (service->method_count() > 0) {
             pb_cc.Indent();
@@ -139,7 +150,9 @@ bool RpcGenerator::Generate(const google::protobuf::FileDescriptor* file, const 
                 }
 
                 pb_cc.Indent();
-                pb_cc.Print(vars, "$method_name$(static_cast<const $method_input_type$&>(request), static_cast<$method_output_type$*>(response));\n");
+                pb_cc.Print(vars,
+                            "$method_name$(static_cast<const $method_input_type$&>(request), "
+                            "static_cast<$method_output_type$*>(response));\n");
                 pb_cc.Outdent();
             }
             pb_cc.Print("}\n");
@@ -149,7 +162,9 @@ bool RpcGenerator::Generate(const google::protobuf::FileDescriptor* file, const 
         pb_cc.Print("}\n");
         pb_cc.Print("\n");
 
-        pb_cc.Print(vars, "const google::protobuf::ServiceDescriptor* $class_name$::ServiceDescriptor() {\n");
+        pb_cc.Print(
+            vars,
+            "const google::protobuf::ServiceDescriptor* $class_name$::ServiceDescriptor() {\n");
         pb_cc.Indent();
         pb_cc.Print(vars, "return $service_name$::descriptor();\n");
         pb_cc.Outdent();
