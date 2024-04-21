@@ -23,7 +23,7 @@ Ports ScanPorts(const cactus::SocketAddress& remote, uint16_t start, uint16_t en
                 cactus::Duration timeout) {
     Ports res;
     cactus::SocketAddress checking_address = remote;
-    for (uint16_t port = start; port < end; ++ port) {
+    for (uint16_t port = start; port < end; ++port) {
         checking_address.SetPort(port);
         res.emplace_back(std::make_pair(port, CheckPort(checking_address, timeout)));
     }
