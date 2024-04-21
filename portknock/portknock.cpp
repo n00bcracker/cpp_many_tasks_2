@@ -1,7 +1,5 @@
 #include "portknock.h"
 #include <array>
-#include <exception>
-#include <iostream>
 #include "cactus/core/scheduler.h"
 #include "cactus/core/timer.h"
 #include "cactus/io/view.h"
@@ -23,8 +21,7 @@ void PortKnock(const cactus::SocketAddress& addr, const KnockProtocol protocol,
             conn->SendTo(cactus::View(buf), addr);
             conn->Close();
         }
-    } catch (std::exception& ex) {
-        std::cout << ex.what() << std::endl;
+    } catch (...) {
     }
     cactus::SleepFor(timeout);
 }
