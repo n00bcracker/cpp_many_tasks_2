@@ -18,7 +18,6 @@ PortState CheckPort(const cactus::SocketAddress& addr, const cactus::Duration ti
     return PortState::OPEN;
 }
 
-
 Ports ScanPorts(const cactus::SocketAddress& remote, uint16_t start, uint16_t end,
                 cactus::Duration timeout) {
     Ports res;

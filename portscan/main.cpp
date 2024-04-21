@@ -17,5 +17,4 @@ int main() {
         conn->Read(cactus::View(msg));
         std::cout << "Message: " << std::string_view(msg.data()) << std::endl;
     });
-
 }
