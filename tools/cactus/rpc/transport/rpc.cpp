@@ -12,7 +12,7 @@ struct FixedHeader {
     uint32_t body_size;
 } __attribute__((packed));
 
-} // namespace
+}  // namespace
 
 namespace cactus {
 
@@ -26,7 +26,8 @@ void SimpleRpcChannel::CallMethod(const google::protobuf::MethodDescriptor* meth
         request_header_msg.set_method(method->name());
         const std::string serialized_request_header = request_header_msg.SerializeAsString();
         const std::string serialized_request_body = request.SerializeAsString();
-        FixedHeader request_header(serialized_request_header.size(), serialized_request_body.size());
+        FixedHeader request_header(serialized_request_header.size(),
+                                   serialized_request_body.size());
 
         conn->Write(View(request_header));
         conn->Write(View(serialized_request_header));
@@ -67,7 +68,8 @@ void SimpleRpcServer::Serve() {
             }
 
             auto& service = services_.at(request_header_msg.service());
-            const auto* method = service->ServiceDescriptor()->FindMethodByName(request_header_msg.method());
+            const auto* method =
+                service->ServiceDescriptor()->FindMethodByName(request_header_msg.method());
 
             std::string serialized_request_body(request_header.body_size, '\0');
             conn->ReadFull(View(serialized_request_body));
@@ -82,7 +84,8 @@ void SimpleRpcServer::Serve() {
             ResponseHeader response_header_msg;
             const std::string serialized_response_header = response_header_msg.SerializeAsString();
             const std::string serialized_response_body = response->SerializeAsString();
-            FixedHeader response_header(serialized_response_header.size(), serialized_response_body.size());
+            FixedHeader response_header(serialized_response_header.size(),
+                                        serialized_response_body.size());
 
             conn->Write(View(response_header));
             conn->Write(View(serialized_response_header));
@@ -100,4 +103,4 @@ void SimpleRpcServer::Serve() {
     }
 }
 
-} // namespace cactus
+}  // namespace cactus
