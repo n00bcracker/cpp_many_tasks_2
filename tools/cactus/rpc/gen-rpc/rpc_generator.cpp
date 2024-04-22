@@ -114,7 +114,7 @@ bool RpcGenerator::Generate(const google::protobuf::FileDescriptor* file, const 
 
                 pb_cc.Print(vars,
                             "$method_output_type$ $class_name$::$method_name$(const "
-                            "$method_input_type$& req) {");
+                            "$method_input_type$& req) {\n");
                 pb_cc.Indent();
                 pb_cc.Print(vars, "$method_output_type$ rsp;\n");
                 pb_cc.Print(vars,
