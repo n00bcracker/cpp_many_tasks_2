@@ -1,4 +1,5 @@
 #include "resp_reader.h"
+#include <cmath>
 #include <cstddef>
 #include <optional>
 #include <string>
@@ -31,6 +32,9 @@ void RespReader::ReadBasicStringToBuf() {
 
         ++size;
         if (buf_.size() == size) {
+            if (size * 2 > std::pow(2, 16)) {
+                throw redis::RedisError("Wrong string ending symbol");
+            }
             buf_.resize(size * 2);
         }
     }
