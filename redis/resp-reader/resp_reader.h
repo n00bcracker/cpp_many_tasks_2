@@ -11,7 +11,8 @@ namespace redis {
 
 class RespReader {
 public:
-    explicit RespReader(cactus::IReader* reader);
+    explicit RespReader(cactus::IReader* reader) : reader_(reader) {
+    }
 
     ERespType ReadType();
 
@@ -20,6 +21,11 @@ public:
     int64_t ReadInt();
     std::optional<std::string_view> ReadBulkString();
     int64_t ReadArrayLength();
+
+private:
+    void ReadBasicStringToBuf();
+    cactus::IReader* reader_;
+    std::string buf_;
 };
 
 }  // namespace redis
