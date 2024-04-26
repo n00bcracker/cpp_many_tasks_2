@@ -5,24 +5,27 @@
 #include <ranges>
 #include <map>
 #include <tuple>
+#include <string>
+#include <memory>
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_range_equals.hpp>
+
+using Catch::Matchers::RangeEquals;
 
 TEST_CASE("PushPop") {
     MPSCQueue<int> queue;
     queue.Push(1);
     queue.Push(2);
 
-    auto [value, ok] = queue.Pop();
-    REQUIRE(ok);
-    REQUIRE(value == 2);
+    auto x = queue.Pop();
+    REQUIRE(x == 2);
 
-    std::tie(value, ok) = queue.Pop();
-    REQUIRE(ok);
-    REQUIRE(value == 1);
+    x = queue.Pop();
+    REQUIRE(x == 1);
 
-    std::tie(value, ok) = queue.Pop();
-    REQUIRE_FALSE(ok);
+    x = queue.Pop();
+    REQUIRE_FALSE(x.has_value());
 }
 
 TEST_CASE("SingleThread") {
@@ -34,7 +37,7 @@ TEST_CASE("SingleThread") {
 
     std::vector<int> dequeued;
     queue.DequeueAll([&](int value) { dequeued.push_back(value); });
-    REQUIRE(std::ranges::equal(dequeued, kRange | std::views::reverse));
+    REQUIRE_THAT(dequeued, RangeEquals(kRange | std::views::reverse));
 }
 
 TEST_CASE("Destructor") {
@@ -44,10 +47,36 @@ TEST_CASE("Destructor") {
     queue.Push(3);
 }
 
+TEST_CASE("MoveOnly") {
+    MPSCQueue<std::unique_ptr<std::string>> queue;
+    queue.Push(std::make_unique<std::string>("aba"));
+    queue.Push(std::make_unique<std::string>("caba"));
+
+    auto x = queue.Pop();
+    REQUIRE(x.has_value());
+    REQUIRE(**x == "caba");
+
+    queue.Push(std::make_unique<std::string>("foo"));
+    auto n = 0;
+    auto check = [&](std::unique_ptr<std::string> s) {
+        REQUIRE(n < 2);
+        if (n == 0) {
+            REQUIRE(*s == "foo");
+        } else {
+            REQUIRE(*s == "aba");
+        }
+        ++n;
+    };
+
+    queue.DequeueAll(check);
+    CHECK(n == 2);
+}
+
 TEST_CASE("Threaded") {
-    static constexpr auto kN = 100'000;
-    static constexpr auto kRange = std::views::iota(0, kN);
-    static constexpr auto kNumProducers = 8;
+    constexpr auto kN = 100'000;
+    constexpr auto kRange = std::views::iota(0, kN);
+    constexpr auto kNumProducers = 8;
+
     MPSCQueue<int> queue;
     std::map<int, size_t> dequeued;
 
@@ -70,6 +99,6 @@ TEST_CASE("Threaded") {
     threads.clear();
     consumer.request_stop();
     consumer.join();
-    REQUIRE(std::ranges::equal(dequeued | std::views::keys, kRange));
+    REQUIRE_THAT(dequeued | std::views::keys, RangeEquals(kRange));
     REQUIRE(std::ranges::count(dequeued | std::views::values, kNumProducers) == kN);
 }

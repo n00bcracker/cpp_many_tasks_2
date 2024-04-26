@@ -7,6 +7,7 @@
 #include <random>
 #include <array>
 #include <system_error>
+#include <stdexcept>
 
 #include <cactus/test.h>
 
@@ -164,6 +165,20 @@ FIBER_TEST_CASE("UserIdLength") {
         auto request = prefix + std::string(length, 'a') + '\0';
         MakeConnection<false>(socks.GetAddress(), request);
     }
+}
+
+FIBER_TEST_CASE("InfiniteUserId") {
+    SocksTest socks;
+    auto conn = cactus::DialTCP(socks.GetAddress());
+    conn->Write(cactus::View(kFakeRequest.substr(0, 8)));
+    auto infinite_write = [&conn] {
+        while (true) {
+            conn->Write(cactus::View('d'));
+            cactus::Yield();
+        }
+    };
+    MemoryGuard guard{10'000'000};
+    CHECK_THROWS_AS(infinite_write(), std::runtime_error);
 }
 
 FIBER_TEST_CASE("CloseBeforeFullRequest") {
