@@ -21,6 +21,7 @@ public:
     Command(ECommands command_type);
     virtual ~Command() = default;
     ECommands GetType() const;
+
 private:
     ECommands type_;
 };
@@ -29,6 +30,7 @@ class CommandGet : public Command {
 public:
     CommandGet(const std::string_view& key);
     const std::string_view GetKeyArg() const;
+
 private:
     std::string key_;
 };
@@ -38,6 +40,7 @@ public:
     CommandSet(const std::string_view& key, const std::string_view& value);
     const std::string_view GetKeyArg() const;
     const std::string_view GetValueArg() const;
+
 private:
     std::string key_;
     std::string value_;
@@ -47,6 +50,7 @@ class CommandIncr : public Command {
 public:
     CommandIncr(const std::string_view& key);
     const std::string_view GetKeyArg() const;
+
 private:
     std::string key_;
 };
@@ -55,6 +59,7 @@ class CommandDecr : public Command {
 public:
     CommandDecr(const std::string_view& key);
     const std::string_view GetKeyArg() const;
+
 private:
     std::string key_;
 };

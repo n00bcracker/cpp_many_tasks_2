@@ -46,7 +46,7 @@ const std::string_view CommandSet::GetKeyArg() const {
 }
 
 const std::string_view CommandSet::GetValueArg() const {
-    return  value_;
+    return value_;
 }
 
 CommandIncr::CommandIncr(const std::string_view& key) : Command(ECommands::INCR), key_(key) {
@@ -87,8 +87,10 @@ std::unique_ptr<Command> Server::ReadCommand(RespReader& reader) {
             }
 
             command_type = commands_.at(std::string(*command_name));
-            if (((command_type == ECommands::GET || command_type == ECommands::INCR || command_type == ECommands::DECR) &&
-                  command_len != 2) || (command_type == ECommands::SET && command_len != 3)) {
+            if (((command_type == ECommands::GET || command_type == ECommands::INCR ||
+                  command_type == ECommands::DECR) &&
+                 command_len != 2) ||
+                (command_type == ECommands::SET && command_len != 3)) {
                 throw redis::RedisError("Wrong command format");
             }
         } else if (i == 1) {
@@ -128,7 +130,6 @@ std::unique_ptr<Command> Server::ReadCommand(RespReader& reader) {
         throw redis::RedisError("Unknown command");
     }
 }
-
 
 void Server::ProcessCommand(RespWriter& writer, const std::unique_ptr<Command> command_ptr) {
     if (command_ptr->GetType() == ECommands::GET) {
@@ -173,9 +174,7 @@ void Server::Listen() {
 }
 
 void Server::Run() {
-    group_.Spawn([this] {
-        Listen();
-    });
+    group_.Spawn([this] { Listen(); });
 }
 
 const cactus::SocketAddress& Server::GetAddress() const {
