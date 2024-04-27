@@ -7,8 +7,8 @@
 
 #include <cactus/net/address.h>
 #include <cactus/net/net.h>
-#include "../resp-reader/resp_reader.h"
-#include "../resp-writer/resp_writer.h"
+#include "resp-reader/resp_reader.h"
+#include "resp-writer/resp_writer.h"
 
 namespace redis {
 
