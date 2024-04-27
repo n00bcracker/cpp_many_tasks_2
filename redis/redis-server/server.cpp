@@ -8,7 +8,6 @@
 #include "cactus/core/fiber.h"
 #include "cactus/core/scheduler.h"
 #include "cactus/net/net.h"
-#include "redis-client/client.h"
 #include "resp-reader/resp_reader.h"
 #include "resp-writer/resp_writer.h"
 #include "resp_types.h"

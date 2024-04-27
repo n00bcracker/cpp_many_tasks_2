@@ -6,15 +6,17 @@
 #include "resp-writer/resp_writer.h"
 #include "storage.h"
 
+#include <map>
 #include <memory>
 #include <string>
 #include <string_view>
 
 #include <cactus/net/address.h>
 #include <cactus/net/net.h>
-#include "redis-client/client.h"
 
 namespace redis {
+
+enum class ECommands { GET, SET, INCR, DECR };
 
 class Command {
 public:
