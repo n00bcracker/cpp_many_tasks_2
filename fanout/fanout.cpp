@@ -1,5 +1,46 @@
 #include "fanout.h"
+#include <sys/types.h>
+#include <cstddef>
+#include <cstdint>
+#include <cstdlib>
+#include <numeric>
+#include <vector>
+#include "cactus/cactus.h"
+#include "cactus/io/view.h"
+#include "cactus/net/net.h"
+
+std::vector<uint64_t> GetTokens(cactus::IConn* conn) {
+    uint64_t tokens_size;
+    conn->ReadFull(cactus::View(tokens_size));
+    std::vector<uint64_t> res(tokens_size);
+    conn->ReadFull(cactus::View(res));
+    return res;
+}
+
+uint64_t GetSecret(const cactus::SocketAddress& address, const std::vector<uint64_t>& tokens) {
+    std::vector<uint64_t> secret_parts(tokens.size());
+    cactus::WaitGroup group;
+    for (size_t i = 0; i < tokens.size(); ++i) {
+        group.Spawn([&, i]() {
+            cactus::SocketAddress cur_address(address);
+            cur_address.SetPort(cur_address.GetPort() + i + 1);
+            auto conn = cactus::DialTCP(cur_address);
+            conn->Write(cactus::View(tokens[i]));
+            conn->ReadFull(cactus::View(secret_parts[i]));
+            secret_parts[i] = __builtin_bswap64(secret_parts[i]);
+        });
+    }
+    group.Wait();
+
+    uint64_t secret = std::reduce(std::begin(secret_parts), std::end(secret_parts), 0ul);
+    return __builtin_bswap64(secret);
+}
 
 std::string Fanout(const cactus::SocketAddress& address) {
-    return "";
+    auto conn = cactus::DialTCP(address);
+    const auto tokens = GetTokens(conn.get());
+    uint64_t secret = GetSecret(address, tokens);
+    conn->Write(cactus::View(secret));
+    std::string flag = conn->ReadAllToString();
+    return flag;
 }
