@@ -1,3 +1,5 @@
+#pragma once
+
 #include "fiber.h"
 
 namespace cactus {
