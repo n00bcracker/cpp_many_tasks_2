@@ -54,7 +54,7 @@ private:
     void EndWrite() {
         std::lock_guard check_lock{check_cnt_};
         --writers_cnt_;
-        if (blocked_readers_cnt_ > 4 * blocked_writers_cnt_) {
+        if (blocked_readers_cnt_ > 3 * blocked_writers_cnt_) {
             can_read_.notify_all();
         } else if (blocked_writers_cnt_) {
             can_write_.notify_one();
