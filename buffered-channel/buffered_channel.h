@@ -56,6 +56,7 @@ public:
     void Close() {
         is_closed_.test_and_set();
         may_read_.notify_all();
+        may_write_.notify_all();
     }
 
 private:
