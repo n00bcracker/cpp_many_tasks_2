@@ -7,7 +7,6 @@
 #include <mutex>
 #include <thread>
 #include <utility>
-#include <vector>
 
 template <class T>
 class TimerQueue {
