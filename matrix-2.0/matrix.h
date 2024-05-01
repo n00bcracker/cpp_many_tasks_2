@@ -204,5 +204,5 @@ concept SuitableMulOperand = requires(L left) {
 
 template <SuitableMulOperand L, typename T>
 Glue<L, T> operator*(const L& left, const Matrix<T>& right) {
-    return Glue{left, right};
+    return Glue<L, T>{left, right};
 }
