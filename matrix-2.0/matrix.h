@@ -195,12 +195,7 @@ private:
 };
 
 template <typename L>
-concept SuitableMulOperand = requires(L left) {
-    Glue(left);
-}
-|| requires(L left) {
-    Matrix(left);
-};
+concept SuitableMulOperand = requires(L left) { Glue(left); } || requires(L left) { Matrix(left); };
 
 template <SuitableMulOperand L, typename T>
 Glue<L, T> operator*(const L& left, const Matrix<T>& right) {
