@@ -22,11 +22,12 @@ public:
         uint64_t my_num = ++writers_counter_;
         value_ = value;
         is_filled_.test_and_set();
-        may_read_.notify_one();
         write.unlock();
+        may_read_.notify_one();
 
-        std::unique_lock<std::mutex> exit(write_);
-        may_exit_.wait(exit, [this, &my_num] { return (my_num <= readers_counter_) || is_closed_.test(); });
+        // std::unique_lock<std::mutex> exit(write_);
+        write.lock();
+        may_exit_.wait(write, [this, &my_num] { return (my_num <= readers_counter_) || is_closed_.test(); });
         if (my_num > readers_counter_) {
             throw std::runtime_error("Channel is closed");
         }
@@ -44,11 +45,12 @@ public:
         uint64_t my_num = ++writers_counter_;
         value_ = std::forward<T>(value);
         is_filled_.test_and_set();
-        may_read_.notify_one();
         write.unlock();
+        may_read_.notify_one();
 
-        std::unique_lock<std::mutex> exit(write_);
-        may_exit_.wait(exit, [this, &my_num] { return (my_num <= readers_counter_) || is_closed_.test(); });
+        // std::unique_lock<std::mutex> exit(write_);
+        write.lock();
+        may_exit_.wait(write, [this, &my_num] { return (my_num <= readers_counter_) || is_closed_.test(); });
         if (my_num > readers_counter_) {
             throw std::runtime_error("Channel is closed");
         }
@@ -65,6 +67,7 @@ public:
             T res = std::move(value_);
             ++readers_counter_;
             is_filled_.clear();
+            read.unlock();
             may_exit_.notify_one();
             return std::optional<T>(std::move(res));
         }
