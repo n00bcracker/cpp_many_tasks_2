@@ -12,7 +12,8 @@ class UnbufferedChannel {
 public:
     void Send(const T& value) {
         std::unique_lock<std::mutex> write(edit_value_);
-        may_write_.wait(write, [this] { return (!is_filled_ && !has_waiter_) || is_closed_.test(); });
+        may_write_.wait(write,
+                        [this] { return (!is_filled_ && !has_waiter_) || is_closed_.test(); });
         if (is_closed_.test()) {
             throw std::runtime_error("Channel is closed");
         }
@@ -26,11 +27,13 @@ public:
         if (is_filled_) {
             throw std::runtime_error("Channel is closed");
         }
+        may_write_.notify_one();
     }
 
     void Send(T&& value) {
         std::unique_lock<std::mutex> write(edit_value_);
-        may_write_.wait(write, [this] { return (!is_filled_ && !has_waiter_) || is_closed_.test(); });
+        may_write_.wait(write,
+                        [this] { return (!is_filled_ && !has_waiter_) || is_closed_.test(); });
         if (is_closed_.test()) {
             throw std::runtime_error("Channel is closed");
         }
@@ -44,6 +47,7 @@ public:
         if (is_filled_) {
             throw std::runtime_error("Channel is closed");
         }
+        may_write_.notify_one();
     }
 
     std::optional<T> Recv() {
@@ -56,7 +60,6 @@ public:
             T res = std::move(value_);
             is_filled_ = false;
             may_exit_.notify_one();
-            may_write_.notify_one();
             return std::optional<T>(std::move(res));
         }
     }
