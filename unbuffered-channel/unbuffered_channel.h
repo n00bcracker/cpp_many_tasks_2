@@ -24,7 +24,7 @@ public:
         may_read_.notify_one();
         write.unlock();
 
-        std::unique_lock<std::mutex> exit(exit_);
+        std::unique_lock<std::mutex> exit(write_);
         may_exit_.wait(exit, [this] { return state_ == 2 || is_closed_.test(); });
         if (state_ != 2) {
             throw std::runtime_error("Channel is closed");
@@ -46,7 +46,7 @@ public:
         may_read_.notify_one();
         write.unlock();
 
-        std::unique_lock<std::mutex> exit(exit_);
+        std::unique_lock<std::mutex> exit(write_);
         may_exit_.wait(exit, [this] { return state_ == 2 || is_closed_.test(); });
         if (state_ != 2) {
             throw std::runtime_error("Channel is closed");
@@ -56,7 +56,7 @@ public:
     }
 
     std::optional<T> Recv() {
-        std::unique_lock<std::mutex> read(read_);
+        std::unique_lock<std::mutex> read(write_);
         may_read_.wait(read, [this] { return state_ == 1 || is_closed_.test(); });
 
         if (is_closed_.test()) {
@@ -70,7 +70,7 @@ public:
     }
 
     void Close() {
-        std::unique_lock<std::mutex> close(read_);
+        std::unique_lock<std::mutex> close(write_);
         is_closed_.test_and_set();
         may_exit_.notify_one();
         may_read_.notify_all();
