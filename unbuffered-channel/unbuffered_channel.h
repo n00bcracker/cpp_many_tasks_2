@@ -4,88 +4,78 @@
 #include <condition_variable>
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <mutex>
 #include <optional>
+#include <queue>
 #include <utility>
+#include <vector>
 
 template <class T>
 class UnbufferedChannel {
+    struct Element {
+        std::shared_ptr<std::condition_variable> cond_var;
+        T value;
+        std::shared_ptr<bool> is_received;
+    };
+
 public:
     void Send(const T& value) {
-        std::unique_lock<std::mutex> write(write_);
-        may_write_.wait(write,
-                        [this] { return state_ == 0 || is_closed_.test(); });
-        if (is_closed_.test()) {
-            throw std::runtime_error("Channel is closed");
-        }
-
-        value_ = value;
-        state_ = 1;
+        std::unique_lock<std::mutex> write(edit_queue_);
+        auto may_exit_ptr = std::make_shared<std::condition_variable>();
+        auto is_received_ptr = std::make_shared<bool>(false);
+        queue_.emplace(may_exit_ptr, value, is_received_ptr);
         may_read_.notify_one();
-        write.unlock();
 
-        std::unique_lock<std::mutex> exit(write_);
-        may_exit_.wait(exit, [this] { return state_ == 2 || is_closed_.test(); });
-        if (state_ != 2) {
+        may_exit_ptr->wait(
+            write, [this, &is_received_ptr] { return *is_received_ptr || is_closed_.test(); });
+        if (!*is_received_ptr) {
             throw std::runtime_error("Channel is closed");
         }
-        state_ = 0;
-        may_write_.notify_one();
     }
 
     void Send(T&& value) {
-        std::unique_lock<std::mutex> write(write_);
-        may_write_.wait(write,
-                        [this] { return state_ == 0 || is_closed_.test(); });
-        if (is_closed_.test()) {
-            throw std::runtime_error("Channel is closed");
-        }
-
-        value_ = std::forward<T>(value);
-        state_ = 1;
+        std::unique_lock<std::mutex> write(edit_queue_);
+        auto may_exit_ptr = std::make_shared<std::condition_variable>();
+        auto is_received_ptr = std::make_shared<bool>(false);
+        queue_.emplace(may_exit_ptr, std::forward<T>(value), is_received_ptr);
         may_read_.notify_one();
-        write.unlock();
 
-        std::unique_lock<std::mutex> exit(write_);
-        may_exit_.wait(exit, [this] { return state_ == 2 || is_closed_.test(); });
-        if (state_ != 2) {
+        may_exit_ptr->wait(
+            write, [this, &is_received_ptr] { return *is_received_ptr || is_closed_.test(); });
+        if (!*is_received_ptr) {
             throw std::runtime_error("Channel is closed");
         }
-        state_ = 0;
-        may_write_.notify_one();
     }
 
     std::optional<T> Recv() {
-        std::unique_lock<std::mutex> read(write_);
-        may_read_.wait(read, [this] { return state_ == 1 || is_closed_.test(); });
-
+        std::unique_lock<std::mutex> read(edit_queue_);
+        may_read_.wait(read, [this] { return !queue_.empty() || is_closed_.test(); });
         if (is_closed_.test()) {
             return std::nullopt;
-        } else {
-            T res = std::move(value_);
-            state_ = 2;
-            may_exit_.notify_one();
-            return std::optional<T>(std::move(res));
         }
+
+        auto elem = std::move(queue_.front());
+        T value = std::move(elem.value);
+        *elem.is_received = true;
+        elem.cond_var->notify_one();
+        queue_.pop();
+        return std::optional<T>(std::move(value));
     }
 
     void Close() {
-        std::unique_lock<std::mutex> close(write_);
+        std::unique_lock<std::mutex> close(edit_queue_);
         is_closed_.test_and_set();
-        may_exit_.notify_one();
+        while (!queue_.empty()) {
+            queue_.front().cond_var->notify_one();
+            queue_.pop();
+        }
         may_read_.notify_all();
-        may_write_.notify_all();
     }
 
 private:
-    std::mutex read_;
-    std::mutex write_;
-    std::mutex exit_;
-    std::condition_variable may_write_;
+    std::mutex edit_queue_;
     std::condition_variable may_read_;
-    std::condition_variable may_exit_;
-    // std::atomic_flag is_filled_;
+    std::queue<Element> queue_;
     std::atomic_flag is_closed_;
-    std::atomic_uint64_t state_ = 0;
-    T value_;
 };
