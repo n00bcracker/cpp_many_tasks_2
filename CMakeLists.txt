@@ -97,9 +97,9 @@ else()
   message(WARNING "clang-fun disabled")
 endif()
 
-# add_if_exists(sfinae)
-# add_if_exists(compile-eval)
-# add_if_exists(constexpr-map)
+add_if_exists(sfinae)
+add_if_exists(compile-eval)
+add_if_exists(constexpr-map)
 
 # add_if_exists(coroutine)
 # add_if_exists(concepts)
