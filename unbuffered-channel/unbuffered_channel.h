@@ -2,14 +2,11 @@
 
 #include <atomic>
 #include <condition_variable>
-#include <cstddef>
-#include <cstdint>
 #include <memory>
 #include <mutex>
 #include <optional>
 #include <queue>
 #include <utility>
-#include <vector>
 
 template <class T>
 class UnbufferedChannel {
