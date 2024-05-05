@@ -11,9 +11,6 @@ public:
     const cactus::SocketAddress& GetAddress() const;
 
 private:
-    void MakeConn(cactus::IConn* conn);
-    void TransferData(cactus::IConn* in_conn, cactus::IConn* out_conn);
-
     std::unique_ptr<cactus::IListener> lsn_;
     cactus::ServerGroup group_;
 };

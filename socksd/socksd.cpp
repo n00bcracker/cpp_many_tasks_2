@@ -45,7 +45,7 @@ size_t ReadWithBufLimit(cactus::IConn* conn, cactus::MutableView buf) {
 SocksServer::SocksServer(const cactus::SocketAddress& at) : lsn_(cactus::ListenTCP(at)) {
 }
 
-void SocksServer::TransferData(cactus::IConn* in_conn, cactus::IConn* out_conn) {
+void TransferData(cactus::IConn* in_conn, cactus::IConn* out_conn) {
     std::string buf(256, '\0');
     size_t read_byte_cnt = 0;
 
@@ -64,7 +64,7 @@ void SocksServer::TransferData(cactus::IConn* in_conn, cactus::IConn* out_conn) 
     }
 }
 
-void SocksServer::MakeConn(cactus::IConn* conn) {
+void MakeConn(cactus::IConn* conn) {
     u_char vn;
     u_char cd;
     uint16_t port;
@@ -124,11 +124,11 @@ void SocksServer::MakeConn(cactus::IConn* conn) {
     conn->Write(cactus::View(ip));
 
     cactus::WaitGroup proxy_group;
-    proxy_group.Spawn([this, in_conn = conn, out_conn = proxy_conn.get()] {
+    proxy_group.Spawn([in_conn = conn, out_conn = proxy_conn.get()] {
         TransferData(in_conn, out_conn);
     });
 
-    proxy_group.Spawn([this, in_conn = proxy_conn.get(), out_conn = conn] {
+    proxy_group.Spawn([in_conn = proxy_conn.get(), out_conn = conn] {
         TransferData(in_conn, out_conn);
     });
 
@@ -138,7 +138,7 @@ void SocksServer::MakeConn(cactus::IConn* conn) {
 void SocksServer::Serve() {
     group_.Spawn([this] {
         while (std::shared_ptr conn = lsn_->Accept()) {
-            group_.Spawn([this, conn = std::move(conn)] {
+            group_.Spawn([conn = std::move(conn)] {
                 MakeConn(conn.get());
             });
         }
