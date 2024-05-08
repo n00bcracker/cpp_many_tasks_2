@@ -12,9 +12,9 @@ struct If<false, T, F> {
 
 template <int L, int R, int N>
 struct BinSearchSqrt {
-    static const int kValue =
-        If<((((L + R) / 2) < (N - 1) / ((L + R) / 2) + 1)), struct BinSearchSqrt<(L + R) / 2 + 1, R, N>,
-           struct BinSearchSqrt<L, (L + R) / 2, N> >::kValue;
+    static const int kValue = If<((((L + R) / 2) < (N - 1) / ((L + R) / 2) + 1)),
+                                 struct BinSearchSqrt<(L + R) / 2 + 1, R, N>,
+                                 struct BinSearchSqrt<L, (L + R) / 2, N> >::kValue;
 };
 
 template <int L, int N>
