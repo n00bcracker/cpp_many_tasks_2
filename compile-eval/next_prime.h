@@ -8,7 +8,7 @@ constexpr bool IsPrime(int x) {
         if (x % i == 0) {
             return false;
         } else {
-            i = NextPrimeImpl(i);
+            i += 2;
         }
     }
 
