@@ -4,26 +4,24 @@
 #include <cstddef>
 #include <cstdint>
 
-
-template<typename T, size_t N, size_t... I>
+template <typename T, size_t N, size_t... I>
 constexpr auto SliceImpl(const std::array<T, N>& a, std::index_sequence<I...>) {
-    return std::array<T, N - 1> {a[I + 1]...};
+    return std::array<T, N - 1>{a[I + 1]...};
 }
 
-template<typename T, std::size_t N, typename Indices = std::make_index_sequence<N-1>>
+template <typename T, std::size_t N, typename Indices = std::make_index_sequence<N - 1>>
 constexpr auto Slice(const std::array<T, N>& a) {
     return SliceImpl(a, Indices{});
 }
 
-
-template<size_t K, size_t N, size_t... I1, size_t... I2>
+template <size_t K, size_t N, size_t... I1, size_t... I2>
 constexpr auto SubmatrixImpl(std::index_sequence<I1...> seq1,
                              const std::array<std::array<int, N>, N>& a,
                              std::index_sequence<I2...> seq2) {
-    return std::array<std::array<int, N-1>, N-1> {Slice(a[I1])..., Slice(a[I2 + K + 1])...};
+    return std::array<std::array<int, N - 1>, N - 1>{Slice(a[I1])..., Slice(a[I2 + K + 1])...};
 }
 
-template<size_t K, size_t N>
+template <size_t K, size_t N>
 constexpr auto Submatrix(const std::array<std::array<int, N>, N>& a) {
     auto first_part = std::make_index_sequence<K>{};
     auto second_part = std::make_index_sequence<N - K - 1>{};
@@ -33,7 +31,7 @@ constexpr auto Submatrix(const std::array<std::array<int, N>, N>& a) {
 template <size_t N>
 constexpr int Determinant(const std::array<std::array<int, N>, N>& a);
 
-template<size_t N, size_t... I>
+template <size_t N, size_t... I>
 constexpr auto Apply(const std::array<std::array<int, N>, N>& a, std::index_sequence<I...>) {
     return std::array<int64_t, N>{Determinant(Submatrix<I>(a))...};
 }
