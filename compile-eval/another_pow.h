@@ -1,5 +1,5 @@
 #pragma once
 
 constexpr int Pow(int a, int b) {
-    return 1;
+    return b == 0 ? 1 : Pow(a, b - 1) * a;
 }
