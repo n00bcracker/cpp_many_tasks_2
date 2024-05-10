@@ -101,9 +101,9 @@ add_if_exists(sfinae)
 add_if_exists(compile-eval)
 add_if_exists(constexpr-map)
 
-# add_if_exists(coroutine)
-# add_if_exists(concepts)
-# add_if_exists(ranges)
+add_if_exists(coroutine)
+add_if_exists(concepts)
+add_if_exists(ranges)
 
 add_if_exists(matrix-2.0)
 add_if_exists(matrix-3.0)

@@ -1,5 +1,5 @@
 ---
-Checks:          '-*,cppcoreguidelines-avoid-goto,cppcoreguidelines-pro-type-const-cast, google-readability-casting, google-runtime-int, modernize-replace-random-shuffle, modernize-use-nullptr, readability-braces-around-statements, readability-container-size-empty, readability-redundant-control-flow, readability-redundant-string-init, readability-identifier-naming, google-build-using-namespace'
+Checks: '-*,cppcoreguidelines-avoid-goto,cppcoreguidelines-pro-type-const-cast, google-readability-casting, google-runtime-int, modernize-replace-random-shuffle, modernize-use-nullptr, readability-braces-around-statements, readability-container-size-empty, readability-redundant-control-flow, readability-redundant-string-init, readability-identifier-naming, google-build-using-namespace'
 HeaderFilterRegex: '\.h$'
 WarningsAsErrors: '*'
 CheckOptions:
@@ -42,6 +42,6 @@ CheckOptions:
   - key: readability-identifier-naming.TypeTemplateParameterIgnoredRegexp
     value: ^expr-type$
   - key: readability-identifier-naming.FunctionIgnoredRegexp
-    value: ^(begin|end|lock|unlock|try_lock)$
+    value: ^(get_return_object_on_allocation_failure|yield_value|await_resume|await_suspend|await_ready|return_value|await_transform|return_void|unhandled_exception|final_suspend|initial_suspend|get_return_object|begin|end|lock|unlock|try_lock)$
   - key: readability-identifier-naming.TypeAliasIgnoredRegexp
-    value: ^(is_transparent|iterator_category|value_type|difference_type|pointer|reference|iterator_type|iterator_concept)$
+    value: ^(promise_type|is_transparent|iterator_category|value_type|difference_type|pointer|reference|iterator_type|iterator_concept)$
