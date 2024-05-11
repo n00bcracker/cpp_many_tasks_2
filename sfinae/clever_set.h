@@ -7,7 +7,6 @@
 #include <unordered_set>
 #include <utility>
 
-
 template <class T, typename Enable = void>
 class CleverSet {
 public:
@@ -114,8 +113,23 @@ struct IsComparable {
                                    std::is_same<bool, decltype(Test2(std::declval<T>()))>::value;
 };
 
+template <typename T, bool = true>
+struct Compare {
+    bool operator()(const T& lhr, const T& rhr) const {
+        return std::less<>()(lhr, rhr);
+    }
+};
+
+template <typename T>
+struct Compare<T, std::is_same<bool, decltype(IsComparable<T>::Test1(std::declval<T>()))>::value> {
+    bool operator()(const T& lhr, const T& rhr) const {
+        return std::greater<>()(rhr, lhr);
+    }
+};
+
 template <class T>
-class CleverSet<T, std::enable_if_t<IsComparable<T>::kValue && !(IsHashable<T>::kValue && IsEqualable<T>::kValue)>> {
+class CleverSet<T, std::enable_if_t<IsComparable<T>::kValue &&
+                                    !(IsHashable<T>::kValue && IsEqualable<T>::kValue)>> {
 public:
     bool Insert(const T& value) {
         return data_.insert(value).second;
@@ -144,5 +158,5 @@ public:
     }
 
 private:
-    std::set<T> data_;
+    std::set<T, Compare<T>> data_;
 };
