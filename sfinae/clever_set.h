@@ -113,7 +113,7 @@ struct IsComparable {
                                    std::is_same<bool, decltype(Test2(std::declval<T>()))>::value;
 };
 
-template <typename T, bool = true>
+template <typename T, typename = bool>
 struct Compare {
     bool operator()(const T& lhr, const T& rhr) const {
         return std::less<>()(lhr, rhr);
@@ -121,7 +121,7 @@ struct Compare {
 };
 
 template <typename T>
-struct Compare<T, std::is_same<bool, decltype(IsComparable<T>::Test1(std::declval<T>()))>::value> {
+struct Compare<T, decltype(IsComparable<T>::Test1(std::declval<T>()))> {
     bool operator()(const T& lhr, const T& rhr) const {
         return std::greater<>()(rhr, lhr);
     }
