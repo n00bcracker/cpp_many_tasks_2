@@ -7,7 +7,8 @@
 #include <vector>
 #include <algorithm>
 
-unsigned LevenshteinDistance(const std::string_view& first_str, const std::string_view& second_str) {
+unsigned LevenshteinDistance(const std::string_view& first_str,
+                             const std::string_view& second_str) {
     size_t first_len = first_str.size();
     size_t second_len = second_str.size();
 
@@ -56,7 +57,8 @@ std::vector<std::string_view> SplitIntoWords(const std::string& name) {
         while (cur_pos < name.size()) {
             if (name[cur_pos] >= 'A' && name[cur_pos] <= 'Z') {
                 if (cur_pos > start_pos) {
-                    res.emplace_back(std::string_view(name.c_str() + start_pos, cur_pos - start_pos));
+                    res.emplace_back(
+                        std::string_view(name.c_str() + start_pos, cur_pos - start_pos));
                 }
                 start_pos = cur_pos;
             }
