@@ -70,7 +70,6 @@ void NamingRulesViolation::CheckMistakes(const std::string& name, const clang::S
     }
 }
 
-
 void NamingRulesViolation::run(const MatchFinder::MatchResult &result) {
 
     ASTContext *context = result.Context;
@@ -78,7 +77,7 @@ void NamingRulesViolation::run(const MatchFinder::MatchResult &result) {
 
     const CXXRecordDecl *type_declaration = result.Nodes.getNodeAs<CXXRecordDecl>("type_decl");
     if (type_declaration && !source_manager.isInSystemHeader(type_declaration->getLocation())) {
-        if (!type_declaration->getName().empty()) {
+        if (type_declaration->getIdentifier()) {
             auto name = type_declaration->getName().str();
             auto start_loc = type_declaration->getBeginLoc();
             if (!std::regex_match(name, kTypeNamePattern)) {
@@ -91,7 +90,7 @@ void NamingRulesViolation::run(const MatchFinder::MatchResult &result) {
 
     const TypeAliasDecl *type_alias_declaration = result.Nodes.getNodeAs<TypeAliasDecl>("type_alias_decl");
     if (type_alias_declaration && !source_manager.isInSystemHeader(type_alias_declaration->getLocation())) {
-        if (!type_alias_declaration->getName().empty()) {
+        if (type_alias_declaration->getIdentifier()) {
             auto name = type_alias_declaration->getName().str();
             auto start_loc = type_alias_declaration->getBeginLoc();
             if (!std::regex_match(name, kTypeNamePattern)) {
@@ -104,7 +103,7 @@ void NamingRulesViolation::run(const MatchFinder::MatchResult &result) {
 
     const TypedefDecl *type_def_declaration = result.Nodes.getNodeAs<TypedefDecl>("type_def_decl");
     if (type_def_declaration && !source_manager.isInSystemHeader(type_def_declaration->getLocation())) {
-        if (!type_def_declaration->getName().empty()) {
+        if (type_def_declaration->getIdentifier()) {
             auto name = type_def_declaration->getName().str();
             auto start_loc = type_def_declaration->getBeginLoc();
             if (!std::regex_match(name, kTypeNamePattern)) {
@@ -117,7 +116,7 @@ void NamingRulesViolation::run(const MatchFinder::MatchResult &result) {
 
     const CXXMethodDecl *method_declaration = result.Nodes.getNodeAs<CXXMethodDecl>("method_decl");
     if (method_declaration && !source_manager.isInSystemHeader(method_declaration->getLocation())) {
-        if (!method_declaration->getName().empty() && method_declaration->getName() != "run") {
+        if (method_declaration->getIdentifier() && method_declaration->getName() != "run") {
             auto name = method_declaration->getName().str();
             auto start_loc = method_declaration->getBeginLoc();
             if (!std::regex_match(name, kTypeNamePattern)) {
@@ -128,7 +127,7 @@ void NamingRulesViolation::run(const MatchFinder::MatchResult &result) {
         }
 
         for (const auto* param_declaration : method_declaration->parameters()) {
-            if (!param_declaration->getName().empty()) {
+            if (param_declaration->getIdentifier()) {
                 auto name = param_declaration->getName().str();
                 auto start_loc = param_declaration->getBeginLoc();
                 if (param_declaration->getType().isConstQualified() || param_declaration->isConstexpr()) {
@@ -150,7 +149,7 @@ void NamingRulesViolation::run(const MatchFinder::MatchResult &result) {
 
     const CXXConstructorDecl *constructor_declaration = result.Nodes.getNodeAs<CXXConstructorDecl>("construct_decl");
     if (constructor_declaration && !source_manager.isInSystemHeader(constructor_declaration->getLocation())) {
-        if (!constructor_declaration->getParent()->getName().empty()) {
+        if (constructor_declaration->getParent()->getIdentifier()) {
             auto name = constructor_declaration->getParent()->getName().str();
             auto start_loc = constructor_declaration->getBeginLoc();
             if (!std::regex_match(name, kTypeNamePattern)) {
@@ -160,7 +159,7 @@ void NamingRulesViolation::run(const MatchFinder::MatchResult &result) {
             }
 
             for (const auto* param_declaration : constructor_declaration->parameters()) {
-                if (!param_declaration->getName().empty()) {
+                if (param_declaration->getIdentifier()) {
                     auto name = param_declaration->getName().str();
                     auto start_loc = param_declaration->getBeginLoc();
                     if (param_declaration->getType().isConstQualified() || param_declaration->isConstexpr()) {
@@ -183,7 +182,7 @@ void NamingRulesViolation::run(const MatchFinder::MatchResult &result) {
 
     const CXXDestructorDecl *destructor_declaration = result.Nodes.getNodeAs<CXXDestructorDecl>("destruct_decl");
     if (destructor_declaration && !source_manager.isInSystemHeader(destructor_declaration->getLocation())) {
-        if (!destructor_declaration->getParent()->getName().empty()) {
+        if (destructor_declaration->getParent()->getIdentifier()) {
             auto name = destructor_declaration->getParent()->getName().str();
             auto start_loc = destructor_declaration->getBeginLoc();
             if (!std::regex_match(name, kTypeNamePattern)) {
@@ -193,7 +192,7 @@ void NamingRulesViolation::run(const MatchFinder::MatchResult &result) {
             }
 
             for (const auto* param_declaration : destructor_declaration->parameters()) {
-                if (!param_declaration->getName().empty()) {
+                if (param_declaration->getIdentifier()) {
                     auto name = param_declaration->getName().str();
                     auto start_loc = param_declaration->getBeginLoc();
                     if (param_declaration->getType().isConstQualified() || param_declaration->isConstexpr()) {
@@ -216,7 +215,7 @@ void NamingRulesViolation::run(const MatchFinder::MatchResult &result) {
 
     const FieldDecl *field_declaration = result.Nodes.getNodeAs<FieldDecl>("field_decl");
     if (field_declaration && !source_manager.isInSystemHeader(field_declaration->getLocation())) {
-        if (field_declaration->isCanonicalDecl() && !field_declaration->getName().empty()) {
+        if (field_declaration->isCanonicalDecl() && field_declaration->getIdentifier()) {
             auto name = field_declaration->getName().str();
             auto start_loc = field_declaration->getBeginLoc();
             if (field_declaration->getType().isConstQualified()) {
@@ -245,7 +244,7 @@ void NamingRulesViolation::run(const MatchFinder::MatchResult &result) {
 
     const VarDecl *var_declaration = result.Nodes.getNodeAs<VarDecl>("variable_decl");
     if (var_declaration && !source_manager.isInSystemHeader(var_declaration->getLocation())) {
-        if (!var_declaration->getName().empty()) {
+        if (var_declaration->getIdentifier()) {
             auto name = var_declaration->getName().str();
             auto start_loc = var_declaration->getBeginLoc();
             if (var_declaration->getType().isConstQualified() || var_declaration->isConstexpr()) {
@@ -275,7 +274,7 @@ void NamingRulesViolation::run(const MatchFinder::MatchResult &result) {
 
     const FunctionDecl *func_declaration = result.Nodes.getNodeAs<FunctionDecl>("func_decl");
     if (func_declaration && !source_manager.isInSystemHeader(func_declaration->getLocation())) {
-        if (!func_declaration->isMain() && !func_declaration->getName().empty()) {
+        if (!func_declaration->isMain() && func_declaration->getIdentifier()) {
             auto name = func_declaration->getName().str();
             auto start_loc = func_declaration->getBeginLoc();
             if (!std::regex_match(name, kTypeNamePattern)) {
@@ -286,7 +285,7 @@ void NamingRulesViolation::run(const MatchFinder::MatchResult &result) {
         }
 
         for (const auto* param_declaration : func_declaration->parameters()) {
-            if (!param_declaration->getName().empty()) {
+            if (param_declaration->getIdentifier()) {
                 auto name = param_declaration->getName().str();
                 auto start_loc = param_declaration->getBeginLoc();
                 if (param_declaration->getType().isConstQualified() || param_declaration->isConstexpr()) {
@@ -308,7 +307,7 @@ void NamingRulesViolation::run(const MatchFinder::MatchResult &result) {
 
     const EnumDecl *enum_declaration = result.Nodes.getNodeAs<EnumDecl>("enum_decl");
     if (enum_declaration && !source_manager.isInSystemHeader(enum_declaration->getLocation())) {
-        if (!enum_declaration->getName().empty()) {
+        if (enum_declaration->getIdentifier()) {
             auto name = enum_declaration->getName().str();
             auto start_loc = enum_declaration->getBeginLoc();
             if (!std::regex_match(name, kTypeNamePattern)) {
