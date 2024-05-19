@@ -21,8 +21,7 @@ template <class T>
 concept Indexable = requires(T t) {
     { std::begin(t) } -> std::random_access_iterator;
     { std::end(t) } -> std::random_access_iterator;
-}
-|| requires(T t, size_t i) {
+} || requires(T t, size_t i) {
     { t[i] } -> NotVoidable;
 };
 
@@ -70,15 +69,14 @@ concept IsPair = requires(T t) {
 };
 
 template <std::ranges::range R>
-requires(!Stringable<R> && !IsPair<std::ranges::range_value_t<R>>) struct JsonSerializable<R>
-    : JsonSerializable<std::ranges::range_value_t<R>> {
-};
+    requires(!Stringable<R> && !IsPair<std::ranges::range_value_t<R>>)
+struct JsonSerializable<R> : JsonSerializable<std::ranges::range_value_t<R>> {};
 
 template <std::ranges::range R>
-requires(!Stringable<R> && Stringable<typename std::tuple_element<
-                               0, std::ranges::range_value_t<R>>::type>) struct JsonSerializable<R>
-    : JsonSerializable<typename std::tuple_element<1, std::ranges::range_value_t<R>>::type> {
-};
+    requires(!Stringable<R> &&
+             Stringable<typename std::tuple_element<0, std::ranges::range_value_t<R>>::type>)
+struct JsonSerializable<R>
+    : JsonSerializable<typename std::tuple_element<1, std::ranges::range_value_t<R>>::type> {};
 
 template <class T>
 concept SerializableToJson = JsonSerializable<T>::kValue;
