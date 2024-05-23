@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <ranges>
 #include <concepts>
+#include <vector>
 
 namespace details {
 template <std::ranges::forward_range R>
@@ -11,6 +12,7 @@ class StrideView : public std::ranges::view_interface<StrideView<R>> {
     using RangeValueT = std::ranges::range_value_t<R>;
     using BaseIteratorType = std::ranges::iterator_t<R>;
 
+    template <typename VIterator>
     class Iterator {
     public:
         using iterator_category = std::iterator_traits<BaseIteratorType>::iterator_category;
@@ -21,15 +23,13 @@ class StrideView : public std::ranges::view_interface<StrideView<R>> {
 
         Iterator() = default;
 
-        Iterator(BaseIteratorType it, size_t pos, std::ranges::range_difference_t<R> step)
-            : it_(it), pos_(pos), k_(step) {
+        Iterator(VIterator it) : it_(it) {
         }
 
         Iterator& operator++()
             requires std::input_iterator<BaseIteratorType>
         {
-            it_ = std::ranges::next(it_, k_);
-            ++pos_;
+            ++it_;
             return *this;
         }
 
@@ -42,13 +42,13 @@ class StrideView : public std::ranges::view_interface<StrideView<R>> {
         value_type& operator*() const
             requires std::input_iterator<BaseIteratorType>
         {
-            return *it_;
+            return **it_;
         }
 
         value_type* operator->() const
             requires std::input_iterator<BaseIteratorType>
         {
-            return &(*it_);
+            return &(**it_);
         }
 
         Iterator operator++(int)
@@ -62,14 +62,13 @@ class StrideView : public std::ranges::view_interface<StrideView<R>> {
         auto operator==(const Iterator& other) const
             requires std::forward_iterator<BaseIteratorType>
         {
-            return it_ == other.it_ && pos_ == other.pos_;
+            return it_ == other.it_;
         }
 
         Iterator& operator--()
             requires std::bidirectional_iterator<BaseIteratorType>
         {
-            it_ = std::ranges::prev(it_, k_);
-            --pos_;
+            --it_;
             return *this;
         }
 
@@ -84,8 +83,7 @@ class StrideView : public std::ranges::view_interface<StrideView<R>> {
         Iterator& operator+=(int n)
             requires std::random_access_iterator<BaseIteratorType>
         {
-            it_ = std::ranges::next(it_, k_ * n);
-            pos_ += n;
+            it_ += n;
             return *this;
         }
 
@@ -105,8 +103,7 @@ class StrideView : public std::ranges::view_interface<StrideView<R>> {
         Iterator& operator-=(int n)
             requires std::random_access_iterator<BaseIteratorType>
         {
-            it_ = std::ranges::prev(it_, k_ * n);
-            pos_ -= n;
+            it_ -= n;
             return *this;
         }
 
@@ -120,44 +117,41 @@ class StrideView : public std::ranges::view_interface<StrideView<R>> {
         difference_type operator-(const Iterator& other) const
             requires std::random_access_iterator<BaseIteratorType>
         {
-            return pos_ - other.pos_;
+            return it_ - other.it_;
         }
 
         value_type& operator[](size_t index) const
             requires std::random_access_iterator<BaseIteratorType>
         {
-            Iterator it = (*this);
-            return *(it + index);
+            return **(it_ + index);
         }
 
         auto operator<(const Iterator& other) const
             requires std::totally_ordered<BaseIteratorType>
         {
-            return pos_ < other.pos_;
+            return it_ < other.it_;
         }
 
         auto operator<=(const Iterator& other) const
             requires std::totally_ordered<BaseIteratorType>
         {
-            return pos_ <= other.pos_;
+            return it_ <= other.it_;
         }
 
         auto operator>(const Iterator& other) const
             requires std::totally_ordered<BaseIteratorType>
         {
-            return pos_ > other.pos_;
+            return it_ > other.it_;
         }
 
         auto operator>=(const Iterator& other) const
             requires std::totally_ordered<BaseIteratorType>
         {
-            return pos_ >= other.pos_;
+            return it_ >= other.it_;
         }
 
     private:
-        BaseIteratorType it_;
-        size_t pos_;
-        std::ranges::range_difference_t<R> k_;
+        VIterator it_;
     };
 
 public:
@@ -165,42 +159,39 @@ public:
 
     StrideView(R base, std::ranges::range_difference_t<R> step)
         : base_{std::move(base)}, step_{step} {
+
+        auto it = std::ranges::begin(base_);
+        iterators_.push_back(it);
+
+        while ((it = std::ranges::next(it, step_, std::ranges::end(base_))) !=
+               std::ranges::end(base_)) {
+            iterators_.push_back(it);
+        }
     }
 
     auto begin() {
-        return Iterator(std::ranges::begin(base_), 0, step_);
+        return Iterator(iterators_.begin());
     }
 
     auto end() {
-        size_t i = 0;
-        auto it = std::ranges::begin(base_);
-        auto tmp = it;
-
-        while ((tmp = std::ranges::next(it, step_, std::ranges::end(base_))) !=
-               std::ranges::end(base_)) {
-            it = tmp;
-            ++i;
-        }
-
-        it = std::ranges::next(it, step_);
-        ++i;
-        return Iterator(it, i, step_);
+        return Iterator(iterators_.end());
     }
 
     auto size() const
         requires std::ranges::sized_range<R>
     {
-        auto n = std::ranges::size(base_);
-        return n > 0 ? (n - 1) / step_ + 1 : 1;
+        return iterators_.size();
     }
 
 private:
     R base_;
     std::ranges::range_difference_t<R> step_;
+    std::vector<BaseIteratorType> iterators_;
 };
 
 template <class R>
-StrideView(R&& base, std::ranges::range_difference_t<R>) -> StrideView<std::ranges::views::all_t<R>>;
+StrideView(R&& base, std::ranges::range_difference_t<R>)
+    -> StrideView<std::ranges::views::all_t<R>>;
 
 template <std::integral Difference>
 struct StrideAdaptorClosure {

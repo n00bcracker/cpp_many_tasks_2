@@ -18,7 +18,6 @@ struct Extractor<R T::*> {
     using Class = T;
 };
 
-
 template <std::ranges::forward_range R, typename FieldPtrType>
     requires std::ranges::view<R>
 class GetFieldView : public std::ranges::view_interface<GetFieldView<R, FieldPtrType>> {
