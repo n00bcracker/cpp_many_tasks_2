@@ -11,8 +11,8 @@ template <std::ranges::forward_range R>
 class StrideView : public std::ranges::view_interface<StrideView<R>> {
     using RangeValueT = std::ranges::range_value_t<R>;
     using BaseIteratorType = std::ranges::iterator_t<R>;
+    using VIterator = std::vector<BaseIteratorType>::iterator;
 
-    template <typename VIterator>
     class Iterator {
     public:
         using iterator_category = std::iterator_traits<BaseIteratorType>::iterator_category;
