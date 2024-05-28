@@ -3,7 +3,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
-#include <ostream>
 #include <string>
 #include <vector>
 
@@ -59,30 +58,6 @@ public:
         }
 
         return program_;
-    }
-
-    void PrintTokens() const {
-        for (const auto& line : program_) {
-            for (const auto& token : line) {
-                if (token.type == TokenType::kNumber) {
-                    std::cout << "kNumber(" << token.number << "), ";
-                } else if (token.type == TokenType::kSymbol) {
-                    std::cout << "kSymbol(" << token.symbol << "), ";
-                } else if (token.type == TokenType::kVar) {
-                    std::cout << "kVar(" << token.var_name << "), ";
-                } else if (token.type == TokenType::kFor) {
-                    std::cout << "kFor, ";
-                } else if (token.type == TokenType::kEqv) {
-                    std::cout << "kEqv, ";
-                } else if (token.type == TokenType::kTab) {
-                    std::cout << "kTab, ";
-                } else if (token.type == TokenType::kBadToken) {
-                    std::cout << "kBadToken, ";
-                }
-            }
-
-            std::cout << std::endl;
-        }
     }
 
 private:
