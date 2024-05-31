@@ -18,10 +18,11 @@ public:
     void SetBackends(const std::vector<cactus::SocketAddress>& peers) override;
     void Run() override;
     const cactus::SocketAddress& GetAddress() const override;
+
 private:
     void MakeConnection(std::shared_ptr<cactus::IConn> client_conn);
-    void ProcessConnection(std::shared_ptr<cactus::IConn> client_conn, std::shared_ptr<cactus::IConn> peer_conn,
-                           std::shared_ptr<Peer> peer);
+    void ProcessConnection(std::shared_ptr<cactus::IConn> client_conn,
+                           std::shared_ptr<cactus::IConn> peer_conn, std::shared_ptr<Peer> peer);
     std::unique_ptr<cactus::IListener> lsn_;
     mutable std::vector<std::shared_ptr<Peer>> peers_;
     cactus::Mutex mutex_;
@@ -62,14 +63,17 @@ void TransferData(cactus::IConn* in_conn, cactus::IConn* out_conn) {
     }
 }
 
-void Balancer::ProcessConnection(std::shared_ptr<cactus::IConn> client_conn, std::shared_ptr<cactus::IConn> peer_conn,
-                       std::shared_ptr<Peer> peer) {
+void Balancer::ProcessConnection(std::shared_ptr<cactus::IConn> client_conn,
+                                 std::shared_ptr<cactus::IConn> peer_conn,
+                                 std::shared_ptr<Peer> peer) {
     cactus::WaitGroup peer_group;
-    peer_group.Spawn(
-        [in_conn = client_conn.get(), out_conn = peer_conn.get()] { TransferData(in_conn, out_conn); });
+    peer_group.Spawn([in_conn = client_conn.get(), out_conn = peer_conn.get()] {
+        TransferData(in_conn, out_conn);
+    });
 
-    peer_group.Spawn(
-        [in_conn = peer_conn.get(), out_conn = client_conn.get()] { TransferData(in_conn, out_conn); });
+    peer_group.Spawn([in_conn = peer_conn.get(), out_conn = client_conn.get()] {
+        TransferData(in_conn, out_conn);
+    });
 
     peer_group.Wait();
 
@@ -89,7 +93,7 @@ void Balancer::MakeConnection(std::shared_ptr<cactus::IConn> client_conn) {
             }
         }
 
-        const auto connect = [&] () -> std::unique_ptr<cactus::IConn> {
+        const auto connect = [&]() -> std::unique_ptr<cactus::IConn> {
             cactus::TimeoutGuard guard{std::chrono::milliseconds(100)};
             try {
                 return DialTCP(suitable_peer->address);
@@ -109,8 +113,8 @@ void Balancer::MakeConnection(std::shared_ptr<cactus::IConn> client_conn) {
 
         if (proxy_conn) {
             ++suitable_peer->load;
-            server_.Spawn([this, client_conn = std::move(client_conn), peer_conn = std::move(proxy_conn),
-                            peer = std::move(suitable_peer)] {
+            server_.Spawn([this, client_conn = std::move(client_conn),
+                           peer_conn = std::move(proxy_conn), peer = std::move(suitable_peer)] {
                 ProcessConnection(client_conn, peer_conn, peer);
             });
             break;
@@ -123,9 +127,7 @@ void Balancer::MakeConnection(std::shared_ptr<cactus::IConn> client_conn) {
 void Balancer::Run() {
     server_.Spawn([this] {
         while (std::shared_ptr conn = lsn_->Accept()) {
-            server_.Spawn([this, client_conn = std::move(conn)] {
-                MakeConnection(client_conn);
-            });
+            server_.Spawn([this, client_conn = std::move(conn)] { MakeConnection(client_conn); });
         }
     });
 }
