@@ -7,7 +7,6 @@ public:
     void LockRead() {
         uint lock = rw_lock_.load();
         do {
-            std::this_thread::yield();
             lock = (lock >> 1) << 1;
         } while (!rw_lock_.compare_exchange_strong(lock, ((lock >> 1) + 1) << 1));
     }
