@@ -21,7 +21,7 @@ public:
         uint lock = rw_lock_.load();
         do {
             lock = 0;
-        } while (!rw_lock_.compare_exchange_strong(lock, lock | 1));
+        } while (!rw_lock_.compare_exchange_strong(lock, 1));
     }
 
     void UnlockWrite() {
