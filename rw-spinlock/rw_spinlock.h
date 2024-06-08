@@ -5,15 +5,17 @@
 class RWSpinLock {
 public:
     void LockRead() {
-        uint lock = rw_lock_.load();
-        do {
+        uint lock = (rw_lock_.load() >> 1) << 1;
+        while (!rw_lock_.compare_exchange_weak(lock, ((lock >> 1) + 1) << 1)) {
+            std::this_thread::yield();
             lock = (lock >> 1) << 1;
-        } while (!rw_lock_.compare_exchange_weak(lock, ((lock >> 1) + 1) << 1));
+        };
     }
 
     void UnlockRead() {
         uint lock = rw_lock_.load();
         while (!rw_lock_.compare_exchange_weak(lock, ((lock >> 1) - 1) << 1)) {
+            std::this_thread::yield();
         }
     }
 
