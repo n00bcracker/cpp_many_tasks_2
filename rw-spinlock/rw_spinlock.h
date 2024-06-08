@@ -19,7 +19,8 @@ public:
 
     void LockWrite() {
         uint lock = 0;
-        while (!rw_lock_.compare_exchange_strong(lock, 1)) {
+        while (!rw_lock_.compare_exchange_weak(lock, 1)) {
+            std::this_thread::yield();
             lock = 0;
         }
     }
