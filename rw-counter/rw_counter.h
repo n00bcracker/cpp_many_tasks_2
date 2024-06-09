@@ -9,7 +9,7 @@ public:
     }
 
     void Increment() {
-        ++*counter_;
+        counter_->fetch_add(1, std::memory_order_relaxed);
     }
 
 private:
@@ -23,7 +23,7 @@ public:
     }
 
     int64_t GetValue() const {
-        return counter_;
+        return counter_.load(std::memory_order_acquire);
     }
 
 private:
