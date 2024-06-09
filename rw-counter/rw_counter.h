@@ -23,7 +23,7 @@ public:
     }
 
     int64_t GetValue() const {
-        return counter_.load(std::memory_order_acquire);
+        return counter_.load(std::memory_order_relaxed);
     }
 
 private:
