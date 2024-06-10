@@ -1,8 +1,8 @@
 #pragma once
 
-#include <stack>
-#include <mutex>
+#include <atomic>
 #include <optional>
+#include <utility>
 
 template <class T>
 class MPSCQueue {
@@ -10,37 +10,53 @@ public:
     // Push adds one element to stack top.
     // Safe to call from multiple threads.
     void Push(T value) {
-        std::lock_guard guard{mutex_};
-        stack_.push(std::move(value));
+        Node* old_head = head_;
+        Node* new_head = new Node{std::move(value), old_head};
+        while (!head_.compare_exchange_weak(old_head, new_head)) {
+            old_head = head_;
+            new_head->next = old_head;
+        }
     }
 
     // Pop removes top element from the stack.
     // Not safe to call concurrently.
     std::optional<T> Pop() {
-        std::lock_guard guard{mutex_};
-        if (stack_.empty()) {
+        if (!head_) {
             return std::nullopt;
         }
-        std::optional result = std::move(stack_.top());
-        stack_.pop();
-        return result;
+
+        Node* old_head = head_;
+        head_ = head_.load()->next;
+        std::optional<T> res = std::move(old_head->value);
+        delete old_head;
+        return res;
     }
 
     // DequeuedAll Pop's all elements from the stack and calls callback() for each.
     // Not safe to call concurrently with Pop()
     void DequeueAll(auto&& callback) {
-        std::stack<T> stack;
-        {
-            std::lock_guard guard{mutex_};
-            stack = std::move(stack_);
+        Node* old_head = head_;
+        while (!head_.compare_exchange_weak(old_head, nullptr)) {
+            old_head = head_;
         }
-        while (!stack.empty()) {
-            callback(std::move(stack.top()));
-            stack.pop();
+
+        while (old_head) {
+            Node* node = old_head;
+            old_head = old_head->next;
+            callback(std::move(node->value));
+            delete node;
         }
     }
 
+    ~MPSCQueue() {
+        DequeueAll([](const auto) {});
+    }
+
 private:
-    std::stack<T> stack_;
-    std::mutex mutex_;
+    struct Node {
+        T value;
+        Node* next;
+    };
+
+    std::atomic<Node*> head_ = nullptr;
 };
