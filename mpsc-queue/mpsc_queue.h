@@ -21,12 +21,15 @@ public:
     // Pop removes top element from the stack.
     // Not safe to call concurrently.
     std::optional<T> Pop() {
-        if (!head_) {
+        Node* old_head = head_;
+        if (!old_head) {
             return std::nullopt;
         }
 
-        Node* old_head = head_;
-        head_ = head_.load()->next;
+        while (!head_.compare_exchange_weak(old_head, old_head->next)) {
+            old_head = head_;
+        }
+
         std::optional<T> res = std::move(old_head->value);
         delete old_head;
         return res;
