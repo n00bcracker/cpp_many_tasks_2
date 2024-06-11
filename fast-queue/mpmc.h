@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <cstddef>
+#include <thread>
 
 template <class T>
 class MPMCBoundedQueue {
@@ -27,7 +28,7 @@ public:
             if (queue_[index].generation == tail - max_size_ + 1) {
                 return false;
             }
-
+            std::this_thread::yield();
         } while (!tail_.compare_exchange_weak(tail, tail + 1));
 
         queue_[index].value = value;
@@ -43,7 +44,7 @@ public:
             if (queue_[index].generation == head) {
                 return false;
             }
-
+            std::this_thread::yield();
         } while (!head_.compare_exchange_weak(head, head + 1));
 
         data = queue_[index].value;
@@ -52,7 +53,7 @@ public:
     }
 
     ~MPMCBoundedQueue() {
-        delete queue_;
+        delete[] queue_;
     }
 
 private:
