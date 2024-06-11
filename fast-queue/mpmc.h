@@ -25,13 +25,13 @@ public:
         size_t index;
         do {
             index = tail & bit_mask_;
-            if (queue_[index].generation.load(std::memory_order_acquire) == tail - bit_mask_) {
+            if (queue_[index].generation.load() == tail - bit_mask_) {
                 return false;
             }
         } while (!tail_.compare_exchange_weak(tail, tail + 1));
 
         queue_[index].value = value;
-        queue_[index].generation.fetch_add(1u, std::memory_order::release);
+        queue_[index].generation.fetch_add(1u);
         return true;
     }
 
@@ -40,13 +40,13 @@ public:
         size_t index;
         do {
             index = head & bit_mask_;
-            if (queue_[index].generation.load(std::memory_order_acquire) == head) {
+            if (queue_[index].generation.load() == head) {
                 return false;
             }
         } while (!head_.compare_exchange_weak(head, head + 1));
 
         data = queue_[index].value;
-        queue_[index].generation.fetch_add(bit_mask_, std::memory_order::release);
+        queue_[index].generation.fetch_add(bit_mask_);
         return true;
     }
 
