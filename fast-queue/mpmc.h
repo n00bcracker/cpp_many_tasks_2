@@ -30,6 +30,7 @@ public:
             if (queue_[index]->generation.load() + bit_mask_ <= tail) {
                 return false;
             }
+            std::this_thread::yield();
         } while (!tail_.compare_exchange_weak(tail, tail + 1));
 
         queue_[index]->value = value;
@@ -45,6 +46,7 @@ public:
             if (queue_[index]->generation.load() < head + 1) {
                 return false;
             }
+            std::this_thread::yield();
         } while (!head_.compare_exchange_weak(head, head + 1));
 
         data = queue_[index]->value;
