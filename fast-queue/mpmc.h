@@ -2,14 +2,13 @@
 
 #include <atomic>
 #include <cstddef>
-#include <memory>
 #include <thread>
 #include <vector>
 
 template <class T>
 class MPMCBoundedQueue {
 private:
-    struct alignas(2 * 1024) Element {
+    struct alignas(512) Element {
         std::atomic_size_t generation;
         T value;
     };
