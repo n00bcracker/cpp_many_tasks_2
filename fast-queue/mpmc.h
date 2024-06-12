@@ -2,7 +2,9 @@
 
 #include <atomic>
 #include <cstddef>
+#include <memory>
 #include <thread>
+#include <vector>
 
 template <class T>
 class MPMCBoundedQueue {
@@ -14,9 +16,9 @@ private:
 
 public:
     explicit MPMCBoundedQueue(size_t size) : max_size_(size), bit_mask_(max_size_ - 1) {
-        queue_ = new Element[size];
         for (size_t i = 0; i < max_size_; ++i) {
-            queue_[i].generation = i;
+            queue_.emplace_back(std::make_unique<Element>());
+            queue_.back()->generation = i;
         }
     }
 
@@ -25,13 +27,13 @@ public:
         size_t index;
         do {
             index = tail & bit_mask_;
-            if (queue_[index].generation.load() == tail - bit_mask_) {
+            if (queue_[index]->generation.load() == tail - bit_mask_) {
                 return false;
             }
         } while (!tail_.compare_exchange_weak(tail, tail + 1));
 
-        queue_[index].value = value;
-        queue_[index].generation.fetch_add(1u);
+        queue_[index]->value = value;
+        queue_[index]->generation.fetch_add(1u);
         return true;
     }
 
@@ -40,18 +42,14 @@ public:
         size_t index;
         do {
             index = head & bit_mask_;
-            if (queue_[index].generation.load() == head) {
+            if (queue_[index]->generation.load() == head) {
                 return false;
             }
         } while (!head_.compare_exchange_weak(head, head + 1));
 
-        data = queue_[index].value;
-        queue_[index].generation.fetch_add(bit_mask_);
+        data = queue_[index]->value;
+        queue_[index]->generation.fetch_add(bit_mask_);
         return true;
-    }
-
-    ~MPMCBoundedQueue() {
-        delete[] queue_;
     }
 
 private:
@@ -59,5 +57,5 @@ private:
     const size_t bit_mask_;
     std::atomic_size_t head_ = 0;
     std::atomic_size_t tail_ = 0;
-    Element* queue_ = nullptr;
+    std::vector<std::unique_ptr<Element>> queue_;
 };
