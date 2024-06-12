@@ -27,7 +27,7 @@ public:
         size_t index;
         do {
             index = tail & bit_mask_;
-            if (queue_[index]->generation.load() == tail - bit_mask_) {
+            if (queue_[index]->generation.load() + bit_mask_ <= tail) {
                 return false;
             }
         } while (!tail_.compare_exchange_weak(tail, tail + 1));
@@ -42,7 +42,7 @@ public:
         size_t index;
         do {
             index = head & bit_mask_;
-            if (queue_[index]->generation.load() == head) {
+            if (queue_[index]->generation.load() < head + 1) {
                 return false;
             }
         } while (!head_.compare_exchange_weak(head, head + 1));
