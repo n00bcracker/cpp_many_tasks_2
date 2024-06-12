@@ -33,7 +33,7 @@ public:
         } while (!tail_.compare_exchange_weak(tail, tail + 1));
 
         queue_[index]->value = value;
-        queue_[index]->generation.fetch_add(1u, std::memory_order_acq_rel);
+        queue_[index]->generation.fetch_add(1u, std::memory_order_release);
         return true;
     }
 
@@ -48,7 +48,7 @@ public:
         } while (!head_.compare_exchange_weak(head, head + 1));
 
         data = queue_[index]->value;
-        queue_[index]->generation.fetch_add(bit_mask_, std::memory_order_acq_rel);
+        queue_[index]->generation.fetch_add(bit_mask_, std::memory_order_release);
         return true;
     }
 
