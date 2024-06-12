@@ -8,7 +8,7 @@
 template <class T>
 class MPMCBoundedQueue {
 private:
-    struct alignas(256) Element {
+    struct alignas(128) Element {
         std::atomic_size_t generation;
         alignas(64) T value;
     };
