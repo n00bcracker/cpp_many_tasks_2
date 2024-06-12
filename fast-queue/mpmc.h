@@ -30,6 +30,7 @@ public:
             if (queue_[index]->generation.load(std::memory_order::acquire) + bit_mask_ <= tail) {
                 return false;
             }
+            std::this_thread::yield();
         } while (!tail_.compare_exchange_weak(tail, tail + 1, std::memory_order_acq_rel));
 
         queue_[index]->value = value;
@@ -45,6 +46,7 @@ public:
             if (queue_[index]->generation.load(std::memory_order::acquire) < head + 1) {
                 return false;
             }
+            std::this_thread::yield();
         } while (!head_.compare_exchange_weak(head, head + 1, std::memory_order_acq_rel));
 
         data = queue_[index]->value;
