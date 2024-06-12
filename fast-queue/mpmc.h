@@ -9,7 +9,7 @@ template <class T>
 class MPMCBoundedQueue {
 private:
     struct alignas(256) Element {
-        std::atomic_size_t generation;
+        alignas(64) std::atomic_size_t generation;
         alignas(64) T value;
     };
 
@@ -37,8 +37,9 @@ public:
             }
         }
 
-        queue_[index].value = value;
-        queue_[index].generation.fetch_add(1u, std::memory_order_release);
+        Element& elem = queue_[index];
+        elem.value = value;
+        elem.generation.fetch_add(1u, std::memory_order_release);
         return true;
     }
 
@@ -58,8 +59,9 @@ public:
             }
         }
 
-        data = queue_[index].value;
-        queue_[index].generation.fetch_add(bit_mask_, std::memory_order_release);
+        Element& elem = queue_[index];
+        data = std::move(elem.value);
+        elem.generation.fetch_add(bit_mask_, std::memory_order_release);
         return true;
     }
 
