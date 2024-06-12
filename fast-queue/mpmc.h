@@ -68,7 +68,7 @@ public:
 private:
     const size_t max_size_;
     const size_t bit_mask_;
-    std::atomic_size_t head_ = 0;
-    std::atomic_size_t tail_ = 0;
-    std::vector<Element> queue_;
+    alignas(64) std::atomic_size_t head_ = 0;
+    alignas(64) std::atomic_size_t tail_ = 0;
+    alignas(64) std::vector<Element> queue_;
 };
