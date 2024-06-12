@@ -10,7 +10,7 @@ class MPMCBoundedQueue {
 private:
     struct alignas(256) Element {
         std::atomic_size_t generation;
-        T value;
+        alignas(64) T value;
     };
 
 public:
