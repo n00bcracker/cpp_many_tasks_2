@@ -15,7 +15,8 @@ private:
     };
 
 public:
-    explicit MPMCBoundedQueue(size_t size) : max_size_(size), bit_mask_(max_size_ - 1), queue_(max_size_) {
+    explicit MPMCBoundedQueue(size_t size)
+        : max_size_(size), bit_mask_(max_size_ - 1), queue_(max_size_) {
         for (size_t i = 0; i < max_size_; ++i) {
             queue_[i].generation = i;
         }
