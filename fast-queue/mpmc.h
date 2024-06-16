@@ -25,14 +25,14 @@ public:
         size_t tail = tail_;
         size_t index = tail & bit_mask_;
 
-        if (queue_[index].generation.load(std::memory_order::acquire) + bit_mask_ <= tail) {
+        if (queue_[index].generation.load(std::memory_order_acquire) + bit_mask_ <= tail) {
             return false;
         }
 
-        while (!tail_.compare_exchange_weak(tail, tail + 1, std::memory_order_acq_rel)) {
+        while (!tail_.compare_exchange_weak(tail, tail + 1, std::memory_order_acquire)) {
             std::this_thread::yield();
             index = tail & bit_mask_;
-            if (queue_[index].generation.load(std::memory_order::acquire) + bit_mask_ <= tail) {
+            if (queue_[index].generation.load(std::memory_order_acquire) + bit_mask_ <= tail) {
                 return false;
             }
         }
@@ -47,14 +47,14 @@ public:
         size_t head = head_;
         size_t index = head & bit_mask_;
 
-        if (queue_[index].generation.load(std::memory_order::acquire) < head + 1) {
+        if (queue_[index].generation.load(std::memory_order_acquire) < head + 1) {
             return false;
         }
 
-        while (!head_.compare_exchange_weak(head, head + 1, std::memory_order_acq_rel)) {
+        while (!head_.compare_exchange_weak(head, head + 1, std::memory_order_acquire)) {
             std::this_thread::yield();
             index = head & bit_mask_;
-            if (queue_[index].generation.load(std::memory_order::acquire) < head + 1) {
+            if (queue_[index].generation.load(std::memory_order_acquire) < head + 1) {
                 return false;
             }
         }
