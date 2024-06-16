@@ -27,21 +27,21 @@ public:
 
     void Lock() {
         int32_t state = 0;
-        if (!state_ref_.compare_exchange_strong(state, 1, std::memory_order_acq_rel)) {
+        if (!state_ref_.compare_exchange_strong(state, 1, std::memory_order_acquire)) {
             if (state != 2) {
-                state = state_ref_.exchange(2, std::memory_order_acq_rel);
+                state = state_ref_.exchange(2, std::memory_order_acquire);
             }
 
             while (state != 0) {
                 FutexWait(&state_, 2);
-                state = state_ref_.exchange(2, std::memory_order_acq_rel);
+                state = state_ref_.exchange(2, std::memory_order_acquire);
             }
         }
     }
 
     void Unlock() {
-        if (state_ref_.fetch_sub(1, std::memory_order_acq_rel) != 1) {
-            state_ref_ = 0;
+        if (state_ref_.fetch_sub(1, std::memory_order_release) != 1) {
+            state_ref_.store(0, std::memory_order_release);
             FutexWake(&state_, 1);
         }
     }
