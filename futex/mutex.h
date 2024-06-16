@@ -1,7 +1,7 @@
 #pragma once
 
-#include <mutex>
 #include <atomic>
+#include <cstdint>
 
 #include <linux/futex.h>
 #include <sys/syscall.h>
@@ -22,14 +22,31 @@ inline void FutexWake(int* value, int count) {
 
 class Mutex {
 public:
+    Mutex() : state_(0), state_ref_(state_) {
+    }
+
     void Lock() {
-        mutex_.lock();
+        int32_t state = 0;
+        if (!state_ref_.compare_exchange_strong(state, 1, std::memory_order_acq_rel)) {
+            if (state != 2) {
+                state = state_ref_.exchange(2, std::memory_order_acq_rel);
+            }
+
+            while (state != 0) {
+                FutexWait(&state_, 2);
+                state = state_ref_.exchange(2, std::memory_order_acq_rel);
+            }
+        }
     }
 
     void Unlock() {
-        mutex_.unlock();
+        if (state_ref_.fetch_sub(1, std::memory_order_acq_rel) != 1) {
+            state_ref_ = 0;
+            FutexWake(&state_, 1);
+        }
     }
 
 private:
-    std::mutex mutex_;
+    alignas(std::atomic_ref<int>::required_alignment) int state_;
+    std::atomic_ref<int> state_ref_;
 };
