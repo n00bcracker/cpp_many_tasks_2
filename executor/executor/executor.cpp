@@ -211,7 +211,6 @@ void Task::Submit(std::shared_ptr<TasksQueue> queue) {
     queue_ = queue;
     TaskStates old_state = TaskStates::Created;
     if (state_.compare_exchange_strong(old_state, TaskStates::Submitted)) {
-        std::this_thread::sleep_for(10s);
         TryToEnque();
     }
 }
