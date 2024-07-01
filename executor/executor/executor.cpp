@@ -11,7 +11,7 @@ using namespace std::chrono_literals;
 
 Executor::Executor(uint32_t num_threads) : queue_(std::make_shared<TasksQueue>()) {
     for (size_t i = 0; i < num_threads; ++i) {
-        threads_.emplace_back([tasks_queue = queue_] () {
+        threads_.emplace_back([tasks_queue = queue_]() {
             std::shared_ptr<Task> task = nullptr;
             while ((task = tasks_queue->Pop())) {
                 if (task->IsCanceled()) {
@@ -119,7 +119,7 @@ bool Task::IsReadyToEnque() const {
         return true;
     }
 
-    return false;;
+    return false;
 }
 
 bool Task::IsReadyToExecute() const {
@@ -263,8 +263,8 @@ std::shared_ptr<Task> TasksQueue::Pop() {
         queue_.empty() ? std::chrono::system_clock::now() + 10ms : queue_.front()->GetStartTime(),
         [this] {
             return closed_.test() || (!queue_.empty() && queue_.front()->IsReadyToExecute());
-        }
-    )) {};
+        })) {
+    };
 
     if (queue_.empty()) {
         return nullptr;

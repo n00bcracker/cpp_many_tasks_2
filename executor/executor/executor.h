@@ -91,6 +91,7 @@ public:
     void Push(std::shared_ptr<Task> task);
     std::shared_ptr<Task> Pop();
     void Close();
+
 private:
     static bool Compare(const std::shared_ptr<Task>& task1, const std::shared_ptr<Task>& task2);
     std::vector<std::shared_ptr<Task>> queue_;
@@ -147,6 +148,7 @@ public:
     Future(std::function<T()> fn);
     T Get();
     void Run() override;
+
 private:
     std::function<T()> func_;
     T result_;
@@ -228,8 +230,8 @@ FuturePtr<T> Executor::WhenFirst(std::vector<FuturePtr<T>> all) {
 }
 
 template <class T>
-FuturePtr<std::vector<T>> Executor::WhenAllBeforeDeadline(std::vector<FuturePtr<T>> all,
-                                                          std::chrono::system_clock::time_point deadline) {
+FuturePtr<std::vector<T>> Executor::WhenAllBeforeDeadline(
+    std::vector<FuturePtr<T>> all, std::chrono::system_clock::time_point deadline) {
     auto fut_ptr = std::make_shared<Future<std::vector<T>>>([all]() -> std::vector<T> {
         std::vector<T> res;
         for (auto& fut : all) {
