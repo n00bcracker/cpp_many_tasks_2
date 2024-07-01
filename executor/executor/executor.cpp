@@ -10,8 +10,7 @@
 using namespace std::chrono_literals;
 
 Executor::Executor(uint32_t num_threads)
-    : queue_(std::make_shared<TasksQueue>())
-    , timer_queue_(std::make_shared<TimerQueue>()) {
+    : queue_(std::make_shared<TasksQueue>()), timer_queue_(std::make_shared<TimerQueue>()) {
     for (size_t i = 0; i < num_threads + 1; ++i) {
         if (i < num_threads) {
             threads_.emplace_back([tasks_queue = queue_]() {
@@ -272,9 +271,7 @@ void TasksQueue::Push(std::shared_ptr<Task> task) {
 
 std::shared_ptr<Task> TasksQueue::Pop() {
     std::unique_lock lock(edit_queue_);
-    waiting_pop_.wait(lock, [this] {
-        return closed_.test() || !queue_.empty();
-    });
+    waiting_pop_.wait(lock, [this] { return closed_.test() || !queue_.empty(); });
 
     if (queue_.empty()) {
         return nullptr;
@@ -309,9 +306,7 @@ void TimerQueue::Push(std::shared_ptr<Task> task) {
 
 std::shared_ptr<Task> TimerQueue::Pop() {
     std::unique_lock lock(edit_queue_);
-    waiting_pop_.wait(lock, [this] {
-        return closed_.test() || !queue_.empty();
-    });
+    waiting_pop_.wait(lock, [this] { return closed_.test() || !queue_.empty(); });
 
     if (queue_.empty()) {
         return nullptr;
