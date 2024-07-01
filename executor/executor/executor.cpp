@@ -317,7 +317,9 @@ std::shared_ptr<Task> TimerQueue::Pop() {
         return nullptr;
     }
 
-    waiting_pop_.wait_until(lock, queue_.front()->GetStartTime());
+    while (std::chrono::system_clock::now() < queue_.front()->GetStartTime()) {
+        waiting_pop_.wait_until(lock, queue_.front()->GetStartTime());
+    }
 
     std::pop_heap(queue_.begin(), queue_.end(), Compare);
     std::shared_ptr<Task> task(std::move(queue_.back()));
@@ -336,6 +338,6 @@ void TimerQueue::Close() {
             task->Cancel();
         }
 
-        waiting_pop_.notify_all();
+        waiting_pop_.notify_one();
     }
 }
