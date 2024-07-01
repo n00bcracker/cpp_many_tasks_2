@@ -143,26 +143,6 @@ bool Task::IsReadyToEnque() const {
     return false;
 }
 
-bool Task::IsReadyToExecute() const {
-    if (has_triggers_ && triggers_activated_.test()) {
-        return true;
-    }
-
-    if (has_dependencies_ && !dependecies_cnt_) {
-        return true;
-    }
-
-    if (has_time_trigger_ && std::chrono::system_clock::now() >= GetStartTime()) {
-        return true;
-    }
-
-    if (!has_triggers_ && !has_dependencies_ && !has_time_trigger_) {
-        return true;
-    }
-
-    return false;
-}
-
 bool Task::IsEnqued() const {
     return state_ == TaskStates::Enqueued;
 }

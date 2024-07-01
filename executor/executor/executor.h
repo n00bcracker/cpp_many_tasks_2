@@ -43,8 +43,6 @@ public:
     void Enque();
     bool IsReadyToEnque() const;
 
-    bool IsReadyToExecute() const;
-
     bool IsEnqued() const;
 
     // Task::Run() completed without throwing exception
