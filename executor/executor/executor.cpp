@@ -9,24 +9,39 @@
 
 using namespace std::chrono_literals;
 
-Executor::Executor(uint32_t num_threads) : queue_(std::make_shared<TasksQueue>()) {
-    for (size_t i = 0; i < num_threads; ++i) {
-        threads_.emplace_back([tasks_queue = queue_]() {
-            std::shared_ptr<Task> task = nullptr;
-            while ((task = tasks_queue->Pop())) {
-                if (task->IsCanceled()) {
-                    continue;
-                }
+Executor::Executor(uint32_t num_threads)
+    : queue_(std::make_shared<TasksQueue>())
+    , timer_queue_(std::make_shared<TimerQueue>()) {
+    for (size_t i = 0; i < num_threads + 1; ++i) {
+        if (i < num_threads) {
+            threads_.emplace_back([tasks_queue = queue_]() {
+                std::shared_ptr<Task> task = nullptr;
+                while ((task = tasks_queue->Pop())) {
+                    if (task->IsCanceled()) {
+                        continue;
+                    }
 
-                try {
-                    task->Run();
-                    task->Complete();
-                } catch (...) {
-                    task->SetError(std::current_exception());
-                    task->Fail();
+                    try {
+                        task->Run();
+                        task->Complete();
+                    } catch (...) {
+                        task->SetError(std::current_exception());
+                        task->Fail();
+                    }
                 }
-            }
-        });
+            });
+        } else {
+            threads_.emplace_back([tasks_queue = timer_queue_]() {
+                std::shared_ptr<Task> task = nullptr;
+                while ((task = tasks_queue->Pop())) {
+                    if (task->IsCanceled()) {
+                        continue;
+                    }
+
+                    task->Enque();
+                }
+            });
+        }
     }
 }
 
@@ -36,10 +51,14 @@ std::shared_ptr<Executor> MakeThreadPoolExecutor(uint32_t num_threads) {
 
 void Executor::Submit(std::shared_ptr<Task> task) {
     task->Submit(queue_);
+    if (!(task->IsEnqued() || task->IsFinished()) && task->HasTimeTrigger()) {
+        timer_queue_->Push(std::move(task));
+    }
 }
 
 void Executor::StartShutdown() {
     queue_->Close();
+    timer_queue_->Close();
 }
 
 void Executor::WaitShutdown() {
@@ -89,6 +108,10 @@ void Task::SetTimeTrigger(std::chrono::system_clock::time_point at) {
     start_at_ = at;
 }
 
+bool Task::HasTimeTrigger() const {
+    return has_time_trigger_;
+}
+
 std::chrono::system_clock::time_point Task::GetStartTime() const {
     return start_at_;
 }
@@ -114,11 +137,7 @@ bool Task::IsReadyToEnque() const {
         return true;
     }
 
-    if (has_time_trigger_) {
-        return true;
-    }
-
-    if (!has_triggers_ && !has_dependencies_) {
+    if (!has_triggers_ && !has_dependencies_ && !has_time_trigger_) {
         return true;
     }
 
@@ -145,36 +164,24 @@ bool Task::IsReadyToExecute() const {
     return false;
 }
 
+bool Task::IsEnqued() const {
+    return state_ == TaskStates::Enqueued;
+}
+
 bool Task::IsCompleted() const {
-    if (state_ == TaskStates::Completed) {
-        return true;
-    } else {
-        return false;
-    }
+    return state_ == TaskStates::Completed;
 }
 
 bool Task::IsFailed() const {
-    if (state_ == TaskStates::Failed) {
-        return true;
-    } else {
-        return false;
-    }
+    return state_ == TaskStates::Failed;
 }
 
 bool Task::IsCanceled() const {
-    if (state_ == TaskStates::Canceled) {
-        return true;
-    } else {
-        return false;
-    }
+    return state_ == TaskStates::Canceled;
 }
 
 bool Task::IsFinished() const {
-    if (state_ > TaskStates::Enqueued) {
-        return true;
-    } else {
-        return false;
-    }
+    return state_ > TaskStates::Enqueued;
 }
 
 void Task::OnFinished() {
@@ -253,14 +260,43 @@ void Task::Wait() {
     }
 }
 
-TasksQueue::TasksQueue() {
-}
-
-bool TasksQueue::Compare(const std::shared_ptr<Task>& task1, const std::shared_ptr<Task>& task2) {
-    return task1->GetStartTime() > task2->GetStartTime();
-}
-
 void TasksQueue::Push(std::shared_ptr<Task> task) {
+    if (!closed_.test()) {
+        std::lock_guard lock(edit_queue_);
+        queue_.emplace_back(std::move(task));
+        waiting_pop_.notify_one();
+    } else {
+        task->Cancel();
+    }
+}
+
+std::shared_ptr<Task> TasksQueue::Pop() {
+    std::unique_lock lock(edit_queue_);
+    waiting_pop_.wait(lock, [this] {
+        return closed_.test() || !queue_.empty();
+    });
+
+    if (queue_.empty()) {
+        return nullptr;
+    }
+
+    std::shared_ptr<Task> task(std::move(queue_.front()));
+    queue_.pop_front();
+    return task;
+}
+
+void TasksQueue::Close() {
+    if (!closed_.test_and_set()) {
+        std::lock_guard lock(edit_queue_);
+        for (auto& task : queue_) {
+            task->Cancel();
+        }
+
+        waiting_pop_.notify_all();
+    }
+}
+
+void TimerQueue::Push(std::shared_ptr<Task> task) {
     if (!closed_.test()) {
         std::lock_guard lock(edit_queue_);
         queue_.emplace_back(std::move(task));
@@ -271,19 +307,17 @@ void TasksQueue::Push(std::shared_ptr<Task> task) {
     }
 }
 
-std::shared_ptr<Task> TasksQueue::Pop() {
+std::shared_ptr<Task> TimerQueue::Pop() {
     std::unique_lock lock(edit_queue_);
-    while (!waiting_pop_.wait_until(
-        lock,
-        queue_.empty() ? std::chrono::system_clock::now() + 20ms : queue_.front()->GetStartTime(),
-        [this] {
-            return closed_.test() || (!queue_.empty() && queue_.front()->IsReadyToExecute());
-        })) {
-    };
+    waiting_pop_.wait(lock, [this] {
+        return closed_.test() || !queue_.empty();
+    });
 
     if (queue_.empty()) {
         return nullptr;
     }
+
+    waiting_pop_.wait_until(lock, queue_.front()->GetStartTime());
 
     std::pop_heap(queue_.begin(), queue_.end(), Compare);
     std::shared_ptr<Task> task(std::move(queue_.back()));
@@ -291,7 +325,11 @@ std::shared_ptr<Task> TasksQueue::Pop() {
     return task;
 }
 
-void TasksQueue::Close() {
+bool TimerQueue::Compare(const std::shared_ptr<Task>& task1, const std::shared_ptr<Task>& task2) {
+    return task1->GetStartTime() > task2->GetStartTime();
+}
+
+void TimerQueue::Close() {
     if (!closed_.test_and_set()) {
         std::lock_guard lock(edit_queue_);
         for (auto& task : queue_) {

@@ -3,6 +3,7 @@
 #include <sys/types.h>
 #include <atomic>
 #include <condition_variable>
+#include <deque>
 #include <memory>
 #include <chrono>
 #include <mutex>
@@ -35,7 +36,7 @@ public:
     void AddTrigger(std::shared_ptr<Task> dep);
     void AddTriggered(std::shared_ptr<Task> dep);
     void SetTimeTrigger(std::chrono::system_clock::time_point at);
-
+    bool HasTimeTrigger() const;
     std::chrono::system_clock::time_point GetStartTime() const;
 
     void TryToEnque();
@@ -43,6 +44,8 @@ public:
     bool IsReadyToEnque() const;
 
     bool IsReadyToExecute() const;
+
+    bool IsEnqued() const;
 
     // Task::Run() completed without throwing exception
     bool IsCompleted() const;
@@ -89,7 +92,19 @@ private:
 
 class TasksQueue {
 public:
-    TasksQueue();
+    void Push(std::shared_ptr<Task> task);
+    std::shared_ptr<Task> Pop();
+    void Close();
+
+private:
+    std::deque<std::shared_ptr<Task>> queue_;
+    std::mutex edit_queue_;
+    std::condition_variable waiting_pop_;
+    std::atomic_flag closed_;
+};
+
+class TimerQueue {
+public:
     void Push(std::shared_ptr<Task> task);
     std::shared_ptr<Task> Pop();
     void Close();
@@ -140,6 +155,7 @@ public:
 private:
     std::vector<std::thread> threads_;
     std::shared_ptr<TasksQueue> queue_;
+    std::shared_ptr<TimerQueue> timer_queue_;
 };
 
 std::shared_ptr<Executor> MakeThreadPoolExecutor(uint32_t num_threads);
