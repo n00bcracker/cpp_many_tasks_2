@@ -64,21 +64,22 @@ void Task::AddDepended(std::shared_ptr<Task> dep) {
     std::lock_guard lock(edit_task_);
     if (!IsFinished()) {
         ++dep->dependecies_cnt_;
-        depended_.emplace_back(std::move(dep));
+        depended_.emplace_back(dep);
     }
 }
 
 void Task::AddTrigger(std::shared_ptr<Task> dep) {
     dep->AddTriggered(shared_from_this());
     has_triggers_ = true;
-    if (dep->IsFinished()) {
-        triggers_activated_.test_and_set();
-    }
 }
 
 void Task::AddTriggered(std::shared_ptr<Task> dep) {
     std::lock_guard lock(edit_task_);
-    triggered_.emplace_back(std::move(dep));
+    if (!IsFinished()) {
+        triggered_.emplace_back(dep);
+    } else {
+        dep->triggers_activated_.test_and_set();
+    }
 }
 
 void Task::SetTimeTrigger(std::chrono::system_clock::time_point at) {
@@ -177,13 +178,19 @@ bool Task::IsFinished() const {
 void Task::OnFinished() {
     std::lock_guard lock(edit_task_);
     for (auto& task : depended_) {
-        --task->dependecies_cnt_;
-        task->TryToEnque();
+        if (!task.expired()) {
+            auto task_ptr = task.lock();
+            --task_ptr->dependecies_cnt_;
+            task_ptr->TryToEnque();
+        }
     }
 
     for (auto& task : triggered_) {
-        task->triggers_activated_.test_and_set();
-        task->TryToEnque();
+        if (!task.expired()) {
+            auto task_ptr = task.lock();
+            task_ptr->triggers_activated_.test_and_set();
+            task_ptr->TryToEnque();
+        }
     }
 
     state_.notify_all();
@@ -201,9 +208,11 @@ void Task::TryToEnque() {
 
 void Task::Enque() {
     TaskStates old_state = TaskStates::Submitted;
-    if (state_.compare_exchange_strong(old_state, TaskStates::Enqueued)) {
-        std::shared_ptr<TasksQueue> queue = queue_.lock();
-        queue->Push(shared_from_this());
+    if (!queue_.expired()) {
+        if (state_.compare_exchange_strong(old_state, TaskStates::Enqueued)) {
+            auto queue = queue_.lock();
+            queue->Push(shared_from_this());
+        }
     }
 }
 

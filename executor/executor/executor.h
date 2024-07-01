@@ -73,10 +73,10 @@ private:
     std::weak_ptr<TasksQueue> queue_;
     std::mutex edit_task_;
 
-    std::vector<std::shared_ptr<Task>> depended_;
+    std::vector<std::weak_ptr<Task>> depended_;
     std::atomic_size_t dependecies_cnt_ = 0;
     bool has_dependencies_ = false;
-    std::vector<std::shared_ptr<Task>> triggered_;
+    std::vector<std::weak_ptr<Task>> triggered_;
     bool has_triggers_ = false;
     std::atomic_flag triggers_activated_;
     std::chrono::system_clock::time_point start_at_;
@@ -185,7 +185,7 @@ FuturePtr<T> Executor::Invoke(std::function<T()> fn) {
 template <class Y, class T>
 FuturePtr<Y> Executor::Then(FuturePtr<T> input, std::function<Y()> fn) {
     auto fut_ptr = std::make_shared<Future<Y>>(fn);
-    fut_ptr->AddDependency(input);
+    fut_ptr->AddDependency(std::move(input));
     Submit(fut_ptr);
     return fut_ptr;
 }
@@ -202,7 +202,7 @@ FuturePtr<std::vector<T>> Executor::WhenAll(std::vector<FuturePtr<T>> all) {
     });
 
     for (auto& fut : all) {
-        fut_ptr->AddDependency(fut);
+        fut_ptr->AddDependency(std::move(fut));
     }
 
     Submit(fut_ptr);
@@ -222,7 +222,7 @@ FuturePtr<T> Executor::WhenFirst(std::vector<FuturePtr<T>> all) {
     });
 
     for (auto& fut : all) {
-        fut_ptr->AddTrigger(fut);
+        fut_ptr->AddTrigger(std::move(fut));
     }
 
     Submit(fut_ptr);
