@@ -338,6 +338,7 @@ TEST("TriggerChain") {
     tasks.back()->Wait();
 
     CHECK_MT(std::ranges::all_of(tasks, [](const auto& task) { return task->IsCompleted(); }));
+
 }
 
 TEST("MultipleDependencies") {

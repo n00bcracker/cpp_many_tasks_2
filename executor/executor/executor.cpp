@@ -186,6 +186,7 @@ void Task::OnFinished() {
             task_ptr->TryToEnque();
         }
     }
+    depended_.clear();
 
     for (auto& task : triggered_) {
         if (!task.expired()) {
@@ -194,6 +195,7 @@ void Task::OnFinished() {
             task_ptr->TryToEnque();
         }
     }
+    triggered_.clear();
 
     state_.notify_all();
 }
@@ -213,6 +215,8 @@ void Task::Enque() {
     if (!queue_.expired()) {
         if (state_.compare_exchange_strong(old_state, TaskStates::Enqueued)) {
             auto queue = queue_.lock();
+            dependencies_.clear();
+            triggers_.clear();
             queue->Push(shared_from_this());
         }
     }
