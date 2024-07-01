@@ -232,8 +232,9 @@ void Task::Cancel() {
 
 void Task::Wait() {
     TaskStates cur_state = state_;
-    if (cur_state <= TaskStates::Enqueued) {
+    while (cur_state <= TaskStates::Enqueued) {
         state_.wait(cur_state);
+        cur_state = state_;
     }
 }
 
