@@ -275,7 +275,7 @@ std::shared_ptr<Task> TasksQueue::Pop() {
     std::unique_lock lock(edit_queue_);
     while (!waiting_pop_.wait_until(
         lock,
-        queue_.empty() ? std::chrono::system_clock::now() + 15ms : queue_.front()->GetStartTime(),
+        queue_.empty() ? std::chrono::system_clock::now() + 18ms : queue_.front()->GetStartTime(),
         [this] {
             return closed_.test() || (!queue_.empty() && queue_.front()->IsReadyToExecute());
         })) {
