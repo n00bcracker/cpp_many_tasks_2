@@ -57,6 +57,7 @@ Executor::~Executor() {
 
 void Task::AddDependency(std::shared_ptr<Task> dep) {
     dep->AddDepended(shared_from_this());
+    dependencies_.emplace_back(std::move(dep));
     has_dependencies_ = true;
 }
 
@@ -70,6 +71,7 @@ void Task::AddDepended(std::shared_ptr<Task> dep) {
 
 void Task::AddTrigger(std::shared_ptr<Task> dep) {
     dep->AddTriggered(shared_from_this());
+    triggers_.emplace_back(std::move(dep));
     has_triggers_ = true;
 }
 

@@ -73,9 +73,11 @@ private:
     std::weak_ptr<TasksQueue> queue_;
     std::mutex edit_task_;
 
+    std::vector<std::shared_ptr<Task>> dependencies_;
     std::vector<std::weak_ptr<Task>> depended_;
     std::atomic_size_t dependecies_cnt_ = 0;
     bool has_dependencies_ = false;
+    std::vector<std::shared_ptr<Task>> triggers_;
     std::vector<std::weak_ptr<Task>> triggered_;
     bool has_triggers_ = false;
     std::atomic_flag triggers_activated_;
